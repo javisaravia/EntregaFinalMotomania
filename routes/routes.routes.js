@@ -19,27 +19,52 @@ const upload = multer({ storage: storage });
 
 // RUTA PARA GUARDAR
 router.post('/guardar', async (req, res) => {
-    console.log("📥 Guardando ruta:", req.body);
+    console.log("-----------------------------------------");
+    console.log("📥 [INFO] Intento de GUARDAR RUTA");
+    console.log("📦 Body recibido:", JSON.stringify(req.body, null, 2));
 
     const { titulo, descripcion, coordenadas, usuario_id, distancia, duracion } = req.body;
 
+    // Validación estricta "Senior"
     if (!titulo || !coordenadas || !usuario_id) {
-        return res.status(400).json({ error: "Faltan datos obligatorios" });
+        console.warn("⚠️ [WARN] Faltan campos obligatorios");
+        return res.status(400).json({ 
+            error: "Faltan datos obligatorios", 
+            camposRequeridos: ["titulo", "coordenadas", "usuario_id"] 
+        });
     }
 
     try {
+        console.log(`🔍 [DEBUG] Procesando coordenadas para usuario ID: ${usuario_id}`);
         const coordsJSON = JSON.stringify(coordenadas);
 
-        // Insertamos incluyendo descripción, distancia y duración
         const sql = 'INSERT INTO routes (title, description, coordinates, user_id, distance, duration) VALUES (?, ?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [titulo, descripcion, coordsJSON, usuario_id, distancia || 0, duracion || 0]);
+        console.log("📝 [QUERY] Ejecutando INSERT en 'routes'...");
 
-        res.json({ msg: "Ruta guardada", id: result.insertId });
+        const [result] = await db.query(sql, [
+            titulo, 
+            descripcion || '', 
+            coordsJSON, 
+            usuario_id, 
+            distancia || 0, 
+            duracion || 0
+        ]);
+
+        console.log("✅ [SUCCESS] Ruta guardada con ID:", result.insertId);
+        res.json({ msg: "Ruta guardada con éxito", id: result.insertId });
 
     } catch (error) {
-        console.error("🔥 Error SQL:", error.sqlMessage);
-        res.status(500).json({ error: "Error de base de datos: " + error.sqlMessage });
+        console.error("🔥 [FATAL ERROR] Fallo al guardar en DB:");
+        console.error("   Mensaje:", error.message);
+        console.error("   Código:", error.code);
+        if (error.sqlMessage) console.error("   SQL Message:", error.sqlMessage);
+        
+        res.status(500).json({ 
+            error: "Error interno del servidor", 
+            detalles: error.sqlMessage || error.message 
+        });
     }
+    console.log("-----------------------------------------");
 });
 
 // --- FUNCIONALIDAD 1: COMENTARIOS (Con soporte para Multiparte/Archivo) ---
