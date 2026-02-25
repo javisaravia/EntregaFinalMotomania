@@ -6,13 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clubes - Motomanía</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-
-
     <style>
-        /* ESTILOS ESPECÍFICOS PARA CLUBES */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent-primary: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --input-border: #334155;
+            --radius-md: 8px;
+            --font-main: 'Montserrat', sans-serif;
+        }
+
         body {
-            padding: 0;
             background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-app {
+            height: 72px;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            border-bottom: 1px solid var(--input-border);
         }
 
         .main-content {
@@ -21,79 +42,51 @@
             margin: 0 auto;
         }
 
-        h2 {
-            border-bottom: 2px solid var(--accent-primary);
-            display: inline-block;
-            padding-bottom: 8px;
-            margin-top: 40px;
-            margin-bottom: 25px;
-            color: var(--text-primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
             margin-bottom: 40px;
         }
 
         .club-card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--input-border);
         }
 
-        .club-card h3 {
-            margin-bottom: 15px;
-            color: var(--text-primary);
-            font-weight: 800;
-        }
-
-        .club-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 20px;
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
         }
 
         .btn-back-link {
+            color: white;
             text-decoration: none;
             background: #334155;
-            color: white;
             padding: 8px 16px;
             border-radius: var(--radius-md);
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-        }
-
-        .btn-back-link:hover {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
         }
 
         .badge-member {
             background: rgba(16, 185, 129, 0.1);
             color: #10b981;
-            padding: 10px;
+            padding: 8px;
             border-radius: var(--radius-md);
-            font-size: 0.9rem;
             text-align: center;
-            font-weight: 700;
-            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-weight: bold;
         }
     </style>
-    <script type="module" crossorigin src="./assets/clubs-CWMUwnVY.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/config-B_CD02Rf.js">
-    <link rel="stylesheet" crossorigin href="./assets/config-C_0tyGmS.css">
 </head>
 
 <body>
-
     <header class="header-app">
         <h1>🧥 Zona de Clubes</h1>
         <a href="routes.html" class="btn-back-link">⬅ Volver al Mapa</a>
@@ -101,17 +94,62 @@
 
     <div class="main-content">
         <h2>✅ Mis Clubes</h2>
-        <div id="mis-clubes-container" class="grid">
-            <p style="color:var(--text-secondary)">Cargando...</p>
-        </div>
+        <div id="mis-clubes-container" class="grid">Cargando...</div>
 
         <h2>🌎 Explorar nuevos clubes</h2>
-        <div id="todos-clubes-container" class="grid">
-            <p style="color:var(--text-secondary)">Cargando...</p>
-        </div>
+        <div id="todos-clubes-container" class="grid">Cargando...</div>
     </div>
 
+    <script type="module">
+        import { API_BASE_URL } from './assets/config-B_CD02Rf.js';
 
+        let currentUserId = null;
+        try {
+            const u = JSON.parse(localStorage.getItem('user'));
+            currentUserId = u.user ? u.user.id : u.id;
+        } catch (e) { window.location.href = 'index.html'; }
+
+        let misIds = [];
+
+        async function cargar() {
+            try {
+                const mc = await (await fetch(`${API_BASE_URL}/api/clubs/mis-clubes/${currentUserId}`)).json();
+                misIds = mc.map(c => c.id);
+                document.getElementById('mis-clubes-container').innerHTML = mc.map(c => `
+                    <div class="club-card">
+                        <h3>${c.name}</h3>
+                        <p>${c.description || ''}</p>
+                        <div class="badge-member">✓ Eres Miembro</div>
+                    </div>
+                `).join('') || 'Aún no perteneces a ningún club.';
+
+                const todos = await (await fetch(`${API_BASE_URL}/api/clubs`)).json();
+                document.getElementById('todos-clubes-container').innerHTML = todos
+                    .filter(c => !misIds.includes(c.id))
+                    .map(c => `
+                        <div class="club-card">
+                            <h3>${c.name}</h3>
+                            <p>${c.description || ''}</p>
+                            <button class="btn-primary" onclick="window.unirse(${c.id}, '${c.name}')">Unirse</button>
+                        </div>
+                    `).join('') || '¡Ya estás en todos los clubes!';
+            } catch (e) { }
+        }
+
+        window.unirse = async (id, name) => {
+            if (!confirm(`¿Unirse a ${name}?`)) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/clubs/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUserId, clubId: id })
+                });
+                if (res.ok) { alert("¡Bienvenido!"); cargar(); }
+            } catch (e) { }
+        };
+
+        cargar();
+    </script>
 </body>
 
 </html>

@@ -7,17 +7,39 @@
     <title>Rutas - Motomanía</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-
     <style>
-        /* ESTILOS ESPECÍFICOS PARA RUTAS */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent-primary: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --input-bg: #1e293b;
+            --input-border: #334155;
+            --radius-md: 8px;
+            --font-main: 'Montserrat', sans-serif;
+        }
+
         body {
             height: 100vh;
             overflow: hidden;
             background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+        }
+
+        .header-app {
+            height: 72px;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            border-bottom: 1px solid var(--input-border);
         }
 
         .main-container {
@@ -44,11 +66,6 @@
             z-index: 1;
         }
 
-        .header-app h2 {
-            font-size: 1.5rem;
-            font-weight: 800;
-        }
-
         .btn-logout {
             background: #334155;
             color: white;
@@ -56,11 +73,22 @@
             border-radius: var(--radius-md);
             font-weight: 600;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
         }
 
         .btn-logout:hover {
             background: var(--accent-primary);
-            border-color: var(--accent-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
         }
 
         .btn-clubs-link {
@@ -72,65 +100,17 @@
             font-size: 14px;
             font-weight: 600;
             border: 1px solid var(--input-border);
-            transition: all 0.3s;
         }
 
-        .btn-clubs-link:hover {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
-
-        /* Tarjetas de Ruta */
         .db-route-item {
             background: var(--bg-primary);
             padding: 15px;
             margin-bottom: 12px;
             border-radius: var(--radius-md);
             border-left: 4px solid var(--accent-primary);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             cursor: pointer;
-            transition: all 0.2s;
-            border-top: 1px solid var(--input-border);
-            border-right: 1px solid var(--input-border);
-            border-bottom: 1px solid var(--input-border);
         }
 
-        .db-route-item:hover {
-            transform: scale(1.02);
-            background: #1e293b;
-        }
-
-        .db-route-item h4 {
-            margin: 0 0 5px 0;
-            color: var(--text-primary);
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
-        .db-route-item .stats {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 12px;
-            margin-top: 5px;
-        }
-
-        .db-route-item .rating {
-            color: #fbbf24;
-            font-size: 0.85rem;
-            margin-top: 5px;
-        }
-
-        h3 {
-            border-bottom: 1px solid var(--input-border);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        /* PANEL DE DETALLES */
         #route-details-panel {
             position: fixed;
             right: -400px;
@@ -140,12 +120,8 @@
             background: var(--bg-secondary);
             box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
             z-index: 1001;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid var(--input-border);
+            transition: right 0.4s;
             padding: 25px;
-            box-sizing: border-box;
             overflow-y: auto;
         }
 
@@ -154,67 +130,39 @@
         }
 
         .close-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: var(--text-secondary);
-            font-size: 1.8rem;
             cursor: pointer;
-            line-height: 1;
+            float: right;
+            font-size: 2rem;
         }
 
-        .close-panel:hover {
-            color: var(--accent-primary);
+        .star {
+            color: #444;
+            cursor: pointer;
+            font-size: 1.5rem;
         }
 
-        .detail-section {
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--input-border);
+        .star.active {
+            color: #fbbf24;
         }
 
-        .detail-section h5 {
-            margin: 0 0 12px 0;
-            font-size: 0.9rem;
-            color: var(--accent-primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Social Wall */
-        .comment-item {
-            background: var(--bg-primary);
-            padding: 12px;
-            border-radius: var(--radius-md);
-            margin-bottom: 12px;
-            font-size: 0.9rem;
-            border: 1px solid var(--input-border);
-        }
-
-        .comment-item .user {
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .comment-form textarea {
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            color: white;
-            padding: 12px;
-            border-radius: var(--radius-md);
+        #spinner {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            font-family: var(--font-main);
-            margin-bottom: 10px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
         }
     </style>
-    <script type="module" crossorigin src="./assets/routes-54o9cdgx.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/config-B_CD02Rf.js">
-    <link rel="stylesheet" crossorigin href="./assets/config-C_0tyGmS.css">
 </head>
 
 <body>
+    <div id="spinner">Cargando...</div>
 
     <header class="header-app">
         <h2>🏍️ MotoManía</h2>
@@ -228,58 +176,163 @@
         <aside class="sidebar">
             <div>
                 <h3>Mis Rutas</h3>
-                <button class="btn-primary" style="padding: 10px; font-size: 0.9rem;" onclick="activarModoCreacion()">+
-                    Crear Nueva Ruta</button>
-                <div id="lista-rutas" style="margin-top: 15px;">
-                    <p style="text-align:center; color:#888;">Cargando...</p>
-                </div>
-            </div>
-            <div>
-                <h3>Rutas Recomendadas</h3>
-                <div id="predefinidas"></div>
+                <button class="btn-primary" onclick="activarModoCreacion()">+ Crear Nueva Ruta</button>
+                <div id="lista-rutas" style="margin-top: 15px;"></div>
             </div>
         </aside>
-
         <div id="map"></div>
 
-        <!-- PANEL DE DETALLES -->
         <div id="route-details-panel">
             <span class="close-panel" onclick="cerrarDetalles()">&times;</span>
-            <h3 id="panel-title">Nombre de la Ruta</h3>
-            <p id="panel-desc" style="color: #aaa; margin-top: -10px; margin-bottom: 20px;"></p>
-
-            <div class="detail-section">
-                <h5>📊 Estadísticas</h5>
-                <p id="panel-stats" style="font-size: 0.9rem;"></p>
+            <h3 id="panel-title"></h3>
+            <p id="panel-desc"></p>
+            <div id="panel-stats"></div>
+            <div id="star-rating-ui">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
             </div>
-
-
-            <div class="detail-section">
-                <h5>⭐ Valorar Ruta</h5>
-                <div class="star-rating" id="star-rating-ui">
-                    <span class="star" data-value="1">★</span>
-                    <span class="star" data-value="2">★</span>
-                    <span class="star" data-value="3">★</span>
-                    <span class="star" data-value="4">★</span>
-                    <span class="star" data-value="5">★</span>
-                </div>
-                <p id="avg-rating-text" style="font-size: 0.8rem; color: #aaa; margin-top: 5px;"></p>
-            </div>
-
-            <div class="detail-section" style="border-bottom: none;">
-                <h5>💬 Muro Social</h5>
-                <div class="comments-list" id="comments-container"></div>
-
-                <div class="comment-form">
-                    <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"></textarea>
-                    <input type="file" id="comment-file" accept="image/*">
-                    <button class="btn-primary" style="padding: 10px;" onclick="subirComentario()">Publicar</button>
-                </div>
+            <p id="avg-rating-text"></p>
+            <div id="comments-container"></div>
+            <div class="comment-form">
+                <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
+                    style="width:100%"></textarea>
+                <input type="file" id="comment-file" accept="image/*">
+                <button class="btn-primary" onclick="subirComentario()">Publicar</button>
             </div>
         </div>
     </div>
 
+    <script type="module">
+        import { API_BASE_URL } from './assets/config-B_CD02Rf.js';
 
+        // --- GLOBALES PARA HTML ---
+        window.logout = () => {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        };
+
+        // --- SEGURIDAD ---
+        let currentUserId = null;
+        try {
+            const u = JSON.parse(localStorage.getItem('user'));
+            currentUserId = u.user ? u.user.id : u.id;
+            if (!currentUserId) throw 'err';
+        } catch (e) { window.location.href = 'index.html'; }
+
+        // --- MAPA ---
+        const map = L.map('map').setView([40.416, -3.703], 6);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        let modoCreacion = false, puntoInicio = null, marcadorInicio = null, currentRouteId = null;
+
+        window.activarModoCreacion = () => {
+            modoCreacion = true; puntoInicio = null;
+            if (marcadorInicio) map.removeLayer(marcadorInicio);
+            document.getElementById('map').style.cursor = 'crosshair';
+            alert("1. Clic en SALIDA | 2. Clic en LLEGADA");
+        };
+
+        map.on('click', async (e) => {
+            if (!modoCreacion) return;
+            if (!puntoInicio) {
+                puntoInicio = e.latlng;
+                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida").openPopup();
+                return;
+            }
+            const puntoFinal = e.latlng;
+            document.getElementById('spinner').style.display = 'flex';
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${puntoInicio.lng},${puntoInicio.lat};${puntoFinal.lng},${puntoFinal.lat}?overview=full&geometries=geojson`;
+                const d = await (await fetch(url)).json();
+                if (d.routes && d.routes.length > 0) {
+                    const r = d.routes[0], coords = L.geoJSON(r.geometry).getLayers()[0].getLatLngs();
+                    const titulo = prompt("Nombre:");
+                    if (!titulo) return;
+                    const res = await fetch(`${API_BASE_URL}/api/rutas/guardar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            titulo, coordenadas: coords, usuario_id: currentUserId,
+                            distancia: (r.distance / 1000).toFixed(2), duracion: Math.round(r.duration / 60)
+                        })
+                    });
+                    if (res.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
+                }
+            } catch (e) { console.error(e); } finally {
+                modoCreacion = false; document.getElementById('spinner').style.display = 'none';
+                if (marcadorInicio) map.removeLayer(marcadorInicio);
+                document.getElementById('map').style.cursor = '';
+            }
+        });
+
+        async function cargarMisRutas() {
+            const c = document.getElementById('lista-rutas');
+            try {
+                const rs = await (await fetch(`${API_BASE_URL}/api/rutas/${currentUserId}`)).json();
+                c.innerHTML = rs.map(r => `
+                    <div class="db-route-item" onclick="window.mostrarDetallesRuta(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+                        <h4>${r.title}</h4>
+                        <small>${r.distance} Km | ${r.duration} min</small>
+                    </div>
+                `).join('');
+            } catch (e) { }
+        }
+
+        window.mostrarDetallesRuta = (r) => {
+            currentRouteId = r.id;
+            document.getElementById('panel-title').innerText = r.title;
+            document.getElementById('panel-desc').innerText = r.description || '';
+            document.getElementById('panel-stats').innerHTML = `${r.distance} Km | ${r.duration} min`;
+            document.getElementById('route-details-panel').classList.add('active');
+            const coords = JSON.parse(r.coordinates);
+            const poly = L.polyline(coords, { color: 'red' }).addTo(map);
+            map.fitBounds(poly.getBounds());
+            cargarComentarios(r.id);
+        };
+
+        window.cerrarDetalles = () => document.getElementById('route-details-panel').classList.remove('active');
+
+        async function cargarComentarios(id) {
+            const c = document.getElementById('comments-container');
+            try {
+                const cms = await (await fetch(`${API_BASE_URL}/api/rutas/${id}/comentarios`)).json();
+                c.innerHTML = cms.map(cm => `<div><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
+            } catch (e) { }
+        }
+
+        window.subirComentario = async () => {
+            const t = document.getElementById('comment-text').value;
+            if (!t) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/comentarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId, comentario: t })
+                });
+                if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
+            } catch (e) { }
+        };
+
+        document.querySelectorAll('.star').forEach(s => {
+            s.onclick = async () => {
+                const v = s.dataset.value;
+                try {
+                    await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/valorar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: currentUserId, rating: v })
+                    });
+                    alert("¡Gracias!");
+                } catch (e) { }
+            }
+        });
+
+        cargarMisRutas();
+    </script>
 </body>
 
 </html>
