@@ -223,6 +223,7 @@
         window.subirComentario = function () {
             if (window.manualSubmitComment) window.manualSubmitComment();
         };
+
     </script>
 
     <script type="module">
@@ -335,6 +336,11 @@
         };
 
         cargarMisRutas();
+        // Añade esto al final de tu <script type="module">
+        window.activarModoCreacion = manualInitCreation;
+        window.logout = logout;
+        window.subirComentario = manualSubmitComment;
+        window.mostrarDetallesRuta = mostrarDetallesRuta;
     </script>
 </body>
 
