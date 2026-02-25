@@ -61,7 +61,7 @@
             <div class="comment-form" style="margin-top:20px;">
                 <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
                     style="width:100%; background:#0f172a; border:1px solid #334155; color:white; padding:10px; border-radius:8px;"></textarea>
-                <button class="btn-primary" onclick="window.subirComentario()"
+                <button id="btn-publicar-comentario" class="btn-primary" onclick="window.subirComentario()"
                     style="margin-top:10px;">Publicar</button>
             </div>
         </div>
@@ -79,7 +79,7 @@
         };
         window.activarModoCreacion = function () {
             if (window.manualInitCreation) window.manualInitCreation();
-            else alert("Cargando mapas...");
+            else mostrarToast("Cargando mapas...", "info");
         };
         window.subirComentario = function () {
             if (window.manualSubmitComment) window.manualSubmitComment();
@@ -114,7 +114,7 @@
             modoCreacion = true; puntoInicio = null;
             if (marcadorInicio) map.removeLayer(marcadorInicio);
             document.getElementById('map').style.cursor = 'crosshair';
-            alert("1. Haz clic en el INICIO | 2. Haz clic en el FINAL");
+            mostrarToast("1. Haz clic en el INICIO | 2. Haz clic en el FINAL", "info");
         };
 
         map.on('click', async (e) => {
@@ -332,7 +332,7 @@
             document.getElementById('dropdown-rutas').classList.remove('active');
         };
         window.verFavoritas = () => {
-            alert("¡Próximamente! Podrás ver tus rutas favoritas aquí.");
+            mostrarToast("¡Próximamente! Podrás ver tus rutas favoritas aquí.", "info");
             document.getElementById('dropdown-rutas').classList.remove('active');
         };
 
