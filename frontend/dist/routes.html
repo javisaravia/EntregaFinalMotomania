@@ -5,11 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rutas - Motomanía</title>
-
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <style>
         :root {
             --bg-primary: #0f172a;
@@ -109,6 +107,7 @@
             border-radius: var(--radius-md);
             border-left: 4px solid var(--accent-primary);
             cursor: pointer;
+            border: 1px solid var(--input-border);
         }
 
         #route-details-panel {
@@ -133,6 +132,11 @@
             cursor: pointer;
             float: right;
             font-size: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .close-panel:hover {
+            color: var(--accent-primary);
         }
 
         .star {
@@ -163,7 +167,6 @@
 
 <body>
     <div id="spinner">Cargando...</div>
-
     <header class="header-app">
         <h2>🏍️ MotoManía</h2>
         <div class="header-buttons">
@@ -171,7 +174,6 @@
             <button class="btn-logout" onclick="window.logout()">Salir</button>
         </div>
     </header>
-
     <div class="main-container">
         <aside class="sidebar">
             <div>
@@ -181,12 +183,11 @@
             </div>
         </aside>
         <div id="map"></div>
-
         <div id="route-details-panel">
             <span class="close-panel" onclick="window.cerrarDetalles()">&times;</span>
             <h3 id="panel-title"></h3>
             <p id="panel-desc"></p>
-            <div id="panel-stats"></div>
+            <div id="panel-stats" style="margin-bottom:15px; font-size:0.9rem;"></div>
             <div id="star-rating-ui">
                 <span class="star" data-value="1">★</span>
                 <span class="star" data-value="2">★</span>
@@ -194,78 +195,66 @@
                 <span class="star" data-value="4">★</span>
                 <span class="star" data-value="5">★</span>
             </div>
-            <p id="avg-rating-text"></p>
-            <div id="comments-container"></div>
-            <div class="comment-form">
+            <p id="avg-rating-text" style="font-size:0.8rem; color:#888;"></p>
+            <div id="comments-container" style="margin-top:10px;"></div>
+            <div class="comment-form" style="margin-top:20px;">
                 <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
-                    style="width:100%"></textarea>
-                <input type="file" id="comment-file" accept="image/*">
+                    style="width:100%; background:#0f172a; border:1px solid #334155; color:white; padding:10px; border-radius:8px;"></textarea>
+                <input type="file" id="comment-file" accept="image/*" style="margin:10px 0;">
                 <button class="btn-primary" onclick="window.subirComentario()">Publicar</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT DE INICIALIZACIÓN GLOBAL (Sin dependencias de módulos para que no falle) -->
+    <!-- SCRIPT DE INICIALIZACIÓN GLOBAL -->
     <script>
         window.logout = function () {
-            console.log("🚪 Cerrando sesión...");
             localStorage.removeItem('user');
             localStorage.removeItem('token');
             window.location.href = 'index.html';
         };
-
         window.cerrarDetalles = function () {
             document.getElementById('route-details-panel').classList.remove('active');
         };
-
         window.activarModoCreacion = function () {
-            if (window.iniciarCreacionManual) {
-                window.iniciarCreacionManual();
-            } else {
-                alert("El sistema de mapas aún se está cargando. Espera un segundo...");
-            }
+            if (window.manualInitCreation) window.manualInitCreation();
+            else alert("Cargando mapas...");
         };
-
         window.subirComentario = function () {
-            if (window.procesarComentarioManual) {
-                window.procesarComentarioManual();
-            }
+            if (window.manualSubmitComment) window.manualSubmitComment();
         };
     </script>
 
     <script type="module">
-        let BASE_URL = 'https://entregafinalmotomania.onrender.com';
-        try {
-            const config = await import('./assets/config-B_CD02Rf.js');
-            BASE_URL = config.A || config.API_BASE_URL || window.API_BASE_URL || BASE_URL;
-        } catch (e) { console.warn("Usando URL de respaldo:", BASE_URL); }
+        const BASE_URL = 'https://entregafinalmotomania.onrender.com';
 
-        // --- SEGURIDAD ---
+        // SEGURIDAD: Obtener userId del localStorage
         let currentUserId = null;
         try {
-            const u = JSON.parse(localStorage.getItem('user'));
-            currentUserId = u.user ? u.user.id : u.id;
-            if (!currentUserId) throw 'err';
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'index.html'; }
+            const userObj = JSON.parse(userStr);
+            currentUserId = userObj.user ? userObj.user.id : userObj.id;
         } catch (e) { window.location.href = 'index.html'; }
 
-        // --- MAPA ---
+        // MAPA
         const map = L.map('map').setView([40.416, -3.703], 6);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let modoCreacion = false, puntoInicio = null, marcadorInicio = null, currentRouteId = null;
 
-        window.iniciarCreacionManual = () => {
+        window.manualInitCreation = () => {
             modoCreacion = true; puntoInicio = null;
             if (marcadorInicio) map.removeLayer(marcadorInicio);
             document.getElementById('map').style.cursor = 'crosshair';
-            alert("MODO CREACIÓN: 1. Clic en punto de SALIDA | 2. Clic en punto de LLEGADA");
+            alert("1. Haz clic en el INICIO | 2. Haz clic en el FINAL");
         };
 
         map.on('click', async (e) => {
             if (!modoCreacion) return;
             if (!puntoInicio) {
                 puntoInicio = e.latlng;
-                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida marcada").openPopup();
+                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida").openPopup();
                 return;
             }
             const puntoFinal = e.latlng;
@@ -275,7 +264,7 @@
                 const d = await (await fetch(url)).json();
                 if (d.routes && d.routes.length > 0) {
                     const r = d.routes[0], coords = L.geoJSON(r.geometry).getLayers()[0].getLatLngs();
-                    const titulo = prompt("Dale un nombre a tu ruta:");
+                    const titulo = prompt("Nombre de la ruta:");
                     if (!titulo) return;
                     const res = await fetch(`${BASE_URL}/api/rutas/guardar`, {
                         method: 'POST',
@@ -285,10 +274,10 @@
                             distancia: (r.distance / 1000).toFixed(2), duracion: Math.round(r.duration / 60)
                         })
                     });
-                    if (res.ok) { alert("¡Ruta guardada exitosamente!"); cargarMisRutas(); }
+                    if (res.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
                     else { const err = await res.json(); alert("Error: " + (err.detalles || err.error)); }
                 }
-            } catch (e) { alert("Fallo al conectar con el servidor."); } finally {
+            } catch (e) { alert("Error al guardar."); } finally {
                 modoCreacion = false; document.getElementById('spinner').style.display = 'none';
                 if (marcadorInicio) map.removeLayer(marcadorInicio);
                 document.getElementById('map').style.cursor = '';
@@ -297,22 +286,17 @@
 
         async function cargarMisRutas() {
             const container = document.getElementById('lista-rutas');
-            container.innerHTML = "Cargando tus rutas...";
+            container.innerHTML = "Cargando...";
             try {
                 const res = await fetch(`${BASE_URL}/api/rutas/${currentUserId}`);
-                if (!res.ok) {
-                    const err = await res.json();
-                    container.innerHTML = `<p style="color:red">Error 500: ${err.detalles || 'Fallo del servidor'}</p>`;
-                    return;
-                }
                 const rs = await res.json();
                 container.innerHTML = rs.map(r => `
                     <div class="db-route-item" onclick='window.mostrarDetallesRuta(${JSON.stringify(r)})'>
                         <h4>${r.title}</h4>
                         <small>${r.distance} Km | ${r.duration} min</small>
                     </div>
-                `).join('');
-            } catch (e) { container.innerHTML = "Error de conexión con la API."; }
+                `).join('') || "Sin rutas.";
+            } catch (e) { container.innerHTML = "Error de conexión."; }
         }
 
         window.mostrarDetallesRuta = (r) => {
@@ -329,19 +313,15 @@
 
         async function cargarComentarios(id) {
             const c = document.getElementById('comments-container');
-            c.innerHTML = "Cargando comentarios...";
+            c.innerHTML = "Cargando...";
             try {
                 const res = await fetch(`${BASE_URL}/api/rutas/${id}/comentarios`);
                 const cms = await res.json();
-                c.innerHTML = cms.map(cm => `
-                    <div style="padding:5px; border-bottom:1px solid #333; font-size: 0.9rem;">
-                        <b>@${cm.username}:</b> ${cm.comment}
-                    </div>
-                `).join('');
-            } catch (e) { c.innerHTML = "No se pudieron cargar los comentarios."; }
+                c.innerHTML = cms.map(cm => `<div style="padding:5px; border-bottom:1px solid #333; font-size:0.85rem;"><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
+            } catch (e) { }
         }
 
-        window.procesarComentarioManual = async () => {
+        window.manualSubmitComment = async () => {
             const t = document.getElementById('comment-text').value;
             if (!t) return;
             try {
@@ -350,27 +330,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: currentUserId, comentario: t })
                 });
-                if (res.ok) {
-                    document.getElementById('comment-text').value = '';
-                    cargarComentarios(currentRouteId);
-                    alert("¡Comentario publicado!");
-                }
-            } catch (e) { alert("Fallo al publicar comentario."); }
+                if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
+            } catch (e) { }
         };
-
-        document.querySelectorAll('.star').forEach(s => {
-            s.onclick = async () => {
-                const v = s.dataset.value;
-                try {
-                    const res = await fetch(`${BASE_URL}/api/rutas/${currentRouteId}/valorar`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: currentUserId, rating: v })
-                    });
-                    if (res.ok) alert("¡Valoración guardada!");
-                } catch (e) { }
-            }
-        });
 
         cargarMisRutas();
     </script>

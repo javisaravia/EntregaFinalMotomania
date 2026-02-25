@@ -217,7 +217,7 @@
         <h2>🏍️ MotoManía</h2>
         <div class="header-buttons">
             <a href="clubs.html" class="btn-clubs-link">🧥 Clubes</a>
-            <button class="btn-logout" onclick="logout()">Salir</button>
+            <button class="btn-logout" onclick="window.logout()">Salir</button>
         </div>
     </header>
 
@@ -225,7 +225,8 @@
         <aside class="sidebar">
             <div>
                 <h3>Mis Rutas</h3>
-                <button class="btn-primary" style="padding: 10px; font-size: 0.9rem;" onclick="activarModoCreacion()">+
+                <button class="btn-primary" style="padding: 10px; font-size: 0.9rem;"
+                    onclick="window.activarModoCreacion()">+
                     Crear Nueva Ruta</button>
                 <div id="lista-rutas" style="margin-top: 15px;">
                     <p style="text-align:center; color:#888;">Cargando...</p>
@@ -241,7 +242,7 @@
 
         <!-- PANEL DE DETALLES -->
         <div id="route-details-panel">
-            <span class="close-panel" onclick="cerrarDetalles()">&times;</span>
+            <span class="close-panel" onclick="window.cerrarDetalles()">&times;</span>
             <h3 id="panel-title">Nombre de la Ruta</h3>
             <p id="panel-desc" style="color: #aaa; margin-top: -10px; margin-bottom: 20px;"></p>
 
@@ -270,7 +271,8 @@
                 <div class="comment-form">
                     <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"></textarea>
                     <input type="file" id="comment-file" accept="image/*">
-                    <button class="btn-primary" style="padding: 10px;" onclick="subirComentario()">Publicar</button>
+                    <button class="btn-primary" style="padding: 10px;"
+                        onclick="window.subirComentario()">Publicar</button>
                 </div>
             </div>
         </div>
