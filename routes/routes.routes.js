@@ -59,41 +59,50 @@ router.post('/guardar', async (req, res) => {
 });
 
 // --- FUNCIONALIDAD: COMENTARIOS ---
+
+// 1. POST /comentar (Guardar un comentario)
 router.post('/comentar', async (req, res) => {
     const { route_id, user_id, comment } = req.body;
     if (!route_id || !user_id || !comment) {
-        return res.status(400).json({ error: "Faltan datos (route_id, user_id o comment)" });
+        return res.status(400).json({ error: "Faltan datos obligatorios (route_id, user_id, comment)" });
     }
     try {
         const query = 'INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)';
         await db.query(query, [route_id, user_id, comment]);
         res.json({ message: "Comentario guardado" });
     } catch (error) {
-        console.error("Error en /comentar:", error.message);
-        res.status(500).json({ error: error.message });
+        console.error("🔥 Error en /comentar:", error.message);
+        res.status(500).json({ error: "Error de base de datos" });
     }
 });
 
-// OBTENER COMENTARIOS
-router.get('/:route_id/comentarios', async (req, res) => {
-    const { route_id } = req.params;
+// 2. GET /:id/comentarios (Obtener comentarios con autor)
+router.get('/:id/comentarios', async (req, res) => {
+    const routeId = req.params.id;
     try {
-        const [results] = await db.query(
-            `SELECT c.*, u.username FROM route_comments c 
-             JOIN users u ON c.user_id = u.id 
-             WHERE c.route_id = ? ORDER BY c.created_at DESC`,
-            [route_id]
-        );
-        res.json(results);
+        const query = `
+            SELECT rc.*, u.username 
+            FROM route_comments rc
+            JOIN users u ON rc.user_id = u.id
+            WHERE rc.route_id = ?
+            ORDER BY rc.created_at DESC
+        `;
+        const [rows] = await db.query(query, [routeId]);
+        res.json(rows);
     } catch (error) {
-        console.error("Error en GET comentarios:", error.message);
+        console.error("🔥 Error en GET /comentarios:", error.message);
         res.status(500).json({ error: "Error al obtener comentarios" });
     }
 });
 
 // --- FUNCIONALIDAD: VALORACIONES ---
+
+// POST /valorar (Guardar o actualizar valoración)
 router.post('/valorar', async (req, res) => {
     const { route_id, user_id, rating } = req.body;
+    if (!route_id || !user_id || rating === undefined) {
+        return res.status(400).json({ error: "Faltan datos obligatorios (route_id, user_id, rating)" });
+    }
     try {
         const query = `
             INSERT INTO route_ratings (route_id, user_id, rating) 
@@ -103,8 +112,8 @@ router.post('/valorar', async (req, res) => {
         await db.query(query, [route_id, user_id, rating]);
         res.json({ message: "Valoración guardada" });
     } catch (error) {
-        console.error("Error en /valorar:", error.message);
-        res.status(500).json({ error: error.message });
+        console.error("🔥 Error en /valorar:", error.message);
+        res.status(500).json({ error: "Error de base de datos" });
     }
 });
 

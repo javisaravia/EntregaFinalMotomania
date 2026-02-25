@@ -324,9 +324,15 @@
         async function cargarComentarios(id) {
             if (!id) return;
             const c = document.getElementById('comments-container');
-            c.innerHTML = ''; // Limpiamos antes de cargar para quitar cualquier rastro de "Cargando..."
+            // NO ponemos "Cargando..." aquí para evitar saltos bruscos si el usuario prefiere limpieza
+            c.innerHTML = '';
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
+                // SEGURIDAD: Solo parsear si la respuesta es OK
+                if (!res.ok) {
+                    console.error("⚠️ Error servidor al cargar comentarios");
+                    return;
+                }
                 const cms = await res.json();
                 if (cms.length === 0) {
                     c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún. ¡Sé el primero!</p>';
@@ -338,40 +344,46 @@
                     `).join('');
                 }
             } catch (e) {
-                console.error("Error al cargar comentarios:", e);
+                console.error("🔥 Error fatídico cargando comentarios:", e.message);
             }
         }
 
         window.manualSubmitComment = async () => {
-            const t = document.getElementById('comment-text').value;
+            const t = document.getElementById('comment-text');
+            const commentVal = t.value.trim();
+
             // Obtenemos ID de la ruta: prioridad variable global, luego URL param
             const urlParams = new URLSearchParams(window.location.search);
             const routeId = currentRouteId || urlParams.get('route_id');
 
-            if (!t) return alert("Escribe algo antes de publicar.");
+            if (!commentVal) return alert("Escribe algo antes de publicar.");
             if (!routeId) return alert("Error: No se ha detectado la ruta seleccionada.");
 
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, comment: t })
+                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, comment: commentVal })
                 });
+
                 if (res.ok) {
                     alert('¡Gracias por publicar tu comentario!');
-                    document.getElementById('comment-text').value = ''; // Limpiar textarea
+                    t.value = ''; // Limpiar textarea
                     cargarComentarios(routeId); // Refresco automático
                 } else {
-                    alert("No se pudo publicar el comentario.");
+                    // Evitar 'Unexpected token <' si el servidor escupe un HTML de error (404/500)
+                    const errorText = await res.text();
+                    console.error("❌ Error del servidor:", errorText);
+                    alert("No se pudo publicar el comentario. Revisa la consola.");
                 }
             } catch (e) {
-                console.error("Error posting comment:", e);
+                console.error("🔥 Error de conexión:", e.message);
                 alert("Error de conexión al publicar.");
             }
         };
 
         window.manualSubmitRating = async (rating) => {
-            if (!currentRouteId) return;
+            if (!currentRouteId) return alert("Selecciona una ruta antes de valorar.");
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/valorar`, {
                     method: 'POST',
@@ -379,15 +391,16 @@
                     body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, rating: rating })
                 });
                 if (res.ok) {
-                    const data = await res.json();
                     alert("¡Gracias por tu valoración!");
                     cargarMisRutas(); // Recargar para ver la nueva media
-                    // Opcional: actualizar UI localmente
-                    if (data.media !== undefined) {
-                        document.getElementById('avg-rating-text').innerText = `Media: ${data.media.toFixed(1)} ★`;
-                    }
-                } else { alert("Error al valorar."); }
-            } catch (e) { console.error("Error rating:", e); }
+                } else {
+                    const errorMsg = await res.text();
+                    console.error("⚠️ Error rating:", errorMsg);
+                    alert("Error al valorar.");
+                }
+            } catch (e) {
+                console.error("🔥 Error conexión rating:", e.message);
+            }
         };
 
         document.querySelectorAll('.star').forEach(star => {

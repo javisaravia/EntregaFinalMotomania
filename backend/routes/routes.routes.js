@@ -48,19 +48,19 @@ router.post('/valorar', async (req, res) => {
     }
 });
 
-// 3. Ruta para COMENTAR
+// 3. Ruta para COMENTAR (POST)
 router.post('/comentar', async (req, res) => {
     const { route_id, user_id, comment } = req.body;
     if (!route_id || !user_id || !comment) {
-        return res.status(400).json({ error: "Faltan datos (route_id, user_id o comment)" });
+        return res.status(400).json({ error: "Faltan datos obligatorios (route_id, user_id, comment)" });
     }
     try {
         const query = 'INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)';
         await db.query(query, [route_id, user_id, comment]);
         res.json({ message: "Comentario guardado" });
     } catch (error) {
-        console.error("Error en /comentar:", error.message);
-        res.status(500).json({ error: error.message });
+        console.error("🔥 Error en /comentar:", error.message);
+        res.status(500).json({ error: "Error de base de datos" });
     }
 });
 
