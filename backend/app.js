@@ -68,7 +68,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 // A. RUTAS DE MAPAS (routes.routes.js)
 try {
-    app.use('/api/rutas', require('./routes/routes.routes'));
+    app.use('/api/routes', require('./routes/routes.routes'));
 } catch (e) { console.error("⚠️ Error cargando rutas de mapas:", e.message); }
 
 // B. RUTAS DE CLUBES (clubs.routes.js) <--- ¡ESTO ES LO NUEVO!

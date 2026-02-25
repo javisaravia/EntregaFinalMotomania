@@ -21,31 +21,31 @@ const upload = multer({ storage: storage });
 router.post('/guardar', async (req, res) => {
     console.log("📥 Guardando ruta:", req.body);
 
-    const { titulo, descripcion, coordenadas, usuario_id, distancia, duracion } = req.body;
+    const { title, description, coordinates, user_id, distance, duration } = req.body;
 
-    if (!titulo || !coordenadas || !usuario_id) {
+    if (!title || !coordinates || !user_id) {
         return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
     try {
-        const coordsJSON = JSON.stringify(coordenadas);
+        const coordsJSON = typeof coordinates === 'string' ? coordinates : JSON.stringify(coordinates);
 
         // Insertamos incluyendo descripción, distancia y duración
         const sql = 'INSERT INTO routes (title, description, coordinates, user_id, distance, duration) VALUES (?, ?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [titulo, descripcion, coordsJSON, usuario_id, distancia || 0, duracion || 0]);
+        const [result] = await db.query(sql, [title, description || '', coordsJSON, user_id, distance || 0, duration || 0]);
 
         res.json({ msg: "Ruta guardada", id: result.insertId });
 
     } catch (error) {
-        console.error("🔥 Error SQL:", error.sqlMessage);
-        res.status(500).json({ error: "Error de base de datos: " + error.sqlMessage });
+        console.error("🔥 Error SQL:", error.sqlMessage || error.message);
+        res.status(500).json({ error: "Error de base de datos: " + (error.sqlMessage || error.message) });
     }
 });
 
 // --- FUNCIONALIDAD 1: COMENTARIOS (Con soporte para Multiparte/Archivo) ---
 router.post('/:route_id/comentarios', upload.single('foto'), async (req, res) => {
     const { route_id } = req.params;
-    const { user_id, comentario } = req.body;
+    const { user_id, comment } = req.body;
     let photo_url = null;
 
     if (req.file) {
@@ -54,7 +54,7 @@ router.post('/:route_id/comentarios', upload.single('foto'), async (req, res) =>
 
     try {
         await db.query('INSERT INTO route_comments (route_id, user_id, comment, photo_url) VALUES (?, ?, ?, ?)',
-            [route_id, user_id, comentario, photo_url]);
+            [route_id, user_id, comment, photo_url]);
         res.json({ msg: "Comentario añadido" });
     } catch (error) {
         console.error("Error Social Wall:", error);

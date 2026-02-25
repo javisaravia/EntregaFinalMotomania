@@ -11,8 +11,8 @@ router.get('/', async (req, res) => {
     console.log("🔍 [INFO] Petición GET para todas las rutas");
     try {
         const sql = 'SELECT * FROM routes ORDER BY created_at DESC';
-        const [rutas] = await db.query(sql);
-        res.json(rutas);
+        const [routes] = await db.query(sql);
+        res.json(routes);
     } catch (error) {
         console.error("🔥 [ERROR GET ALL ROUTES]:", error.message);
         res.status(500).json({ error: "Error al obtener rutas" });
@@ -22,15 +22,16 @@ router.get('/', async (req, res) => {
 // 2. GUARDAR RUTA (POST /api/routes)
 router.post('/', async (req, res) => {
     console.log("📥 [INFO] Nueva ruta recibida (API English)");
-    const { title, user_id, coordinates, distance } = req.body;
+    const { title, user_id, coordinates, distance, duration, description } = req.body;
 
     if (!title || !user_id || !coordinates) {
         return res.status(400).json({ error: "Faltan datos requeridos (title, user_id, coordinates)" });
     }
 
     try {
-        const sql = 'INSERT INTO routes (title, user_id, coordinates, distance) VALUES (?, ?, ?, ?)';
-        const [result] = await db.query(sql, [title, user_id, coordinates, distance || 0]);
+        const coordsJSON = typeof coordinates === 'string' ? coordinates : JSON.stringify(coordinates);
+        const sql = 'INSERT INTO routes (title, user_id, coordinates, distance, duration, description) VALUES (?, ?, ?, ?, ?, ?)';
+        const [result] = await db.query(sql, [title, user_id, coordsJSON, distance || 0, duration || 0, description || '']);
         
         console.log("✅ [SUCCESS] Ruta guardada con ID:", result.insertId);
         res.json({ message: "Ruta guardada", id: result.insertId });
@@ -44,13 +45,13 @@ router.post('/', async (req, res) => {
 
 // RUTA PARA GUARDAR (Antigua /api/rutas/guardar -> Ahora disponible en /api/routes/guardar si se desea, 
 // o simplemente redirigir al nuevo formato)
+// RUTA PARA GUARDAR (Compatible con frontend /guardar)
 router.post('/guardar', async (req, res) => {
-    // Redirigimos lógica al nuevo formato o mantenemos según se prefiera.
-    // Para no romper nada, lo dejamos como estaba pero adaptado a la tabla routes.
-    const { titulo, descripcion, coordenadas, usuario_id, distancia, duracion } = req.body;
+    const { title, description, coordinates, user_id, distance, duration } = req.body;
     try {
+        const coordsJSON = typeof coordinates === 'string' ? coordinates : JSON.stringify(coordinates);
         const sql = 'INSERT INTO routes (title, description, coordinates, user_id, distance, duration) VALUES (?, ?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [titulo, descripcion || '', JSON.stringify(coordenadas), usuario_id, distancia || 0, duracion || 0]);
+        const [result] = await db.query(sql, [title, description || '', coordsJSON, user_id, distance || 0, duration || 0]);
         res.json({ msg: "Ruta guardada con éxito", id: result.insertId });
     } catch (error) {
         res.status(500).json({ error: "Error interno", detalles: error.message });

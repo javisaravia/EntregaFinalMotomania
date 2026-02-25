@@ -267,12 +267,12 @@
                     const r = d.routes[0], coords = L.geoJSON(r.geometry).getLayers()[0].getLatLngs();
                     const titulo = prompt("Nombre de la ruta:");
                     if (!titulo) return;
-                    const res = await fetch(`${BASE_URL}/api/rutas/guardar`, {
+                    const res = await fetch(`${BASE_URL}/api/routes/guardar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            titulo, coordenadas: coords, usuario_id: currentUserId,
-                            distancia: (r.distance / 1000).toFixed(2), duracion: Math.round(r.duration / 60)
+                            title: titulo, coordinates: coords, user_id: currentUserId,
+                            distance: (r.distance / 1000).toFixed(2), duration: Math.round(r.duration / 60)
                         })
                     });
                     if (res.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
@@ -289,7 +289,7 @@
             const container = document.getElementById('lista-rutas');
             container.innerHTML = "Cargando...";
             try {
-                const res = await fetch(`${BASE_URL}/api/rutas/${currentUserId}`);
+                const res = await fetch(`${BASE_URL}/api/routes/${currentUserId}`);
                 const rs = await res.json();
                 container.innerHTML = rs.map(r => `
                     <div class="db-route-item" onclick='window.mostrarDetallesRuta(${JSON.stringify(r)})'>
@@ -316,7 +316,7 @@
             const c = document.getElementById('comments-container');
             c.innerHTML = "Cargando...";
             try {
-                const res = await fetch(`${BASE_URL}/api/rutas/${id}/comentarios`);
+                const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
                 const cms = await res.json();
                 c.innerHTML = cms.map(cm => `<div style="padding:5px; border-bottom:1px solid #333; font-size:0.85rem;"><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
             } catch (e) { }
@@ -326,10 +326,10 @@
             const t = document.getElementById('comment-text').value;
             if (!t) return;
             try {
-                const res = await fetch(`${BASE_URL}/api/rutas/${currentRouteId}/comentarios`, {
+                const res = await fetch(`${BASE_URL}/api/routes/${currentRouteId}/comentarios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId, comentario: t })
+                    body: JSON.stringify({ user_id: currentUserId, comment: t })
                 });
                 if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
             } catch (e) { }
