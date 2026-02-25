@@ -323,12 +323,20 @@
 
         async function cargarComentarios(id) {
             const c = document.getElementById('comments-container');
-            c.innerHTML = "Cargando...";
+            // NO ponemos "Cargando..." aquí para evitar saltos bruscos si el usuario prefiere limpieza
+            // c.innerHTML = "Cargando..."; 
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
                 const cms = await res.json();
-                c.innerHTML = cms.map(cm => `<div style="padding:5px; border-bottom:1px solid #333; font-size:0.85rem;"><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
-            } catch (e) { }
+                if (cms.length === 0) {
+                    c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún.</p>';
+                } else {
+                    c.innerHTML = cms.map(cm => `<div style="padding:8px; border-bottom:1px solid #334155; font-size:0.85rem; color:#f1f5f9;"><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
+                }
+            } catch (e) {
+                console.error("Error cargando comentarios:", e);
+                c.innerHTML = "";
+            }
         }
 
         window.manualSubmitComment = async () => {
@@ -340,8 +348,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, comment: t })
                 });
-                if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
-            } catch (e) { }
+                if (res.ok) {
+                    alert('¡Gracias por publicar tu comentario!');
+                    document.getElementById('comment-text').value = '';
+                    cargarComentarios(currentRouteId); // Actualización automática
+                } else {
+                    alert("Error al guardar el comentario.");
+                }
+            } catch (e) { console.error("Error posting comment:", e); }
         };
 
         window.manualSubmitRating = async (rating) => {
