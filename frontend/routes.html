@@ -172,7 +172,7 @@
             document.getElementById('panel-stats').innerHTML = `Distancia: ${r.distance} Km | Tiempo: ${r.duration} min`;
             document.getElementById('route-details-panel').classList.add('active');
 
-            const coords = JSON.parse(r.coordinates);
+            const coords = typeof r.coordinates === 'string' ? JSON.parse(r.coordinates) : r.coordinates;
             const poly = L.polyline(coords, { color: 'red', weight: 5 }).addTo(map);
             map.fitBounds(poly.getBounds());
 
@@ -185,17 +185,39 @@
 
         async function cargarValoracionMedia(id) {
             const text = document.getElementById('avg-rating-text');
-            text.style.opacity = '0.5';
+            if (text) text.style.opacity = '0.5';
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/${id}/valoracion-media`);
                 const data = await res.json();
                 const media = parseFloat(data.media) || 0;
-                text.innerText = media > 0 ? `Valoración media: ${media.toFixed(1)} ★` : 'Sin valoraciones aún';
+                if (text) text.innerText = media > 0 ? `Valoración media: ${media.toFixed(1)} ★` : 'Sin valoraciones aún';
                 actualizarEstrellasUI(Math.round(media));
             } catch (e) {
-                text.innerText = 'Error al cargar valoración';
+                if (text) text.innerText = 'Error al cargar valoración';
             } finally {
-                text.style.opacity = '1';
+                if (text) text.style.opacity = '1';
+            }
+        }
+
+        async function cargarComentarios(id) {
+            if (!id) return;
+            const c = document.getElementById('comments-container');
+            c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Cargando comentarios...</p>';
+            try {
+                const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
+                if (!res.ok) return;
+                const cms = await res.json();
+                if (cms.length === 0) {
+                    c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún. ¡Sé el primero!</p>';
+                } else {
+                    c.innerHTML = cms.map(cm => `
+                        <div style="padding:10px; border-bottom:1px solid #334155; font-size:0.85rem; color:#f1f5f9;">
+                            <b style="color:var(--accent-primary)">@${cm.username}:</b> ${cm.comment}
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error("Error cargando comentarios:", e);
             }
         }
 
@@ -210,9 +232,10 @@
         }
 
         window.manualSubmitRating = async (rating) => {
-            if (!currentRouteId) return alert("Selecciona una ruta antes de valorar.");
+            const urlParams = new URLSearchParams(window.location.search);
+            const routeId = currentRouteId || urlParams.get('route_id');
+            if (!routeId) return alert("Selecciona una ruta antes de valorar.");
 
-            // FEEDBACK INSTANTÁNEO
             actualizarEstrellasUI(rating);
             const status = document.getElementById('rating-status-container');
             status.innerHTML = '<p style="color:#fbbf24; font-size:0.75rem; font-weight:700;">Guardando...</p>';
@@ -221,31 +244,69 @@
                 const res = await fetch(`${BASE_URL}/api/routes/valorar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, rating: rating })
+                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, rating: rating })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
                     status.innerHTML = '<div class="rating-saved-msg">¡Valoración guardada!</div>';
-
-                    // Actualizar texto de media con el valor devuelto si existe
                     if (data.newMedia !== undefined) {
                         const media = parseFloat(data.newMedia);
                         document.getElementById('avg-rating-text').innerText = `Valoración media: ${media.toFixed(1)} ★`;
                     }
-
-                    cargarMisRutas(); // Refrescar lista lateral
+                    cargarMisRutas();
                 } else {
                     status.innerHTML = '';
                     alert("Error al guardar valoración.");
                 }
             } catch (e) {
                 status.innerHTML = '';
-                console.error("Error rating:", e);
             }
         };
 
-        // DROPDOWN FUNCTIONS (Placeholders or logic)
+        window.manualSubmitComment = async () => {
+            const t = document.getElementById('comment-text');
+            const commentVal = t.value.trim();
+            const urlParams = new URLSearchParams(window.location.search);
+            const routeId = currentRouteId || urlParams.get('route_id');
+
+            if (!commentVal) return alert("Escribe algo antes de publicar.");
+            if (!routeId) return alert("Error: No se ha detectado la ruta seleccionada.");
+
+            try {
+                const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, comment: commentVal })
+                });
+
+                if (res.ok) {
+                    t.value = '';
+                    cargarComentarios(routeId);
+                } else {
+                    alert("No se pudo publicar el comentario.");
+                }
+            } catch (e) {
+                alert("Error de conexión al publicar.");
+            }
+        };
+
+        async function inicializarPagina() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const routeId = urlParams.get('route_id');
+            if (routeId) {
+                try {
+                    const res = await fetch(`${BASE_URL}/api/routes/detail/${routeId}`);
+                    if (res.ok) {
+                        const r = await res.json();
+                        window.mostrarDetallesRuta(r);
+                    }
+                } catch (e) {
+                    console.error("Error al inicializar:", e);
+                }
+            }
+        }
+
         window.cargarVerMisRutas = () => {
             cargarMisRutas();
             document.getElementById('dropdown-rutas').classList.remove('active');
@@ -258,15 +319,14 @@
         document.querySelectorAll('.star').forEach(star => {
             star.onmouseover = () => actualizarEstrellasUI(parseInt(star.dataset.value), true);
             star.onmouseout = () => {
-                // Restauramos a la media actual (o 0 si no hay seleccionada)
-                // Nota: Para ser más precisos necesitaríamos guardar la selección del usuario
-                // Por ahora restauramos simplemente vaciando si el user no ha clicado o refrescando media
+                // Restaurar media si es necesario, o dejar
             };
             star.onclick = () => window.enviarValoracion(parseInt(star.dataset.value));
         });
 
         cargarMisRutas();
-        // EXPORTACIÓN GLOBAL PARA VERCEL/BOTONES
+        inicializarPagina();
+
         window.activarModoCreacion = manualInitCreation;
         window.logout = function () {
             localStorage.removeItem('user');
