@@ -13,9 +13,24 @@
 <body>
 
     <header class="header-app">
-        <h1>🧥 Zona de Clubes</h1>
+        <h2>MotoManía</h2>
         <div class="header-buttons">
+            <div class="dropdown" id="dropdown-rutas">
+                <button class="btn-secondary dropdown-toggle" style="width:auto; padding:8px 16px;"
+                    onclick="this.parentElement.classList.toggle('active')">
+                    🗺️ Rutas
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="window.location.href='routes.html'">➕ Crear Nueva
+                        Ruta</button>
+                    <button class="dropdown-item" onclick="window.location.href='routes.html'">📍 Mis Rutas
+                        Guardadas</button>
+                    <button class="dropdown-item" onclick="window.location.href='routes.html'">⭐ Rutas
+                        Favoritas</button>
+                </div>
+            </div>
             <a href="routes.html" class="btn-secondary" style="width:auto; padding:8px 16px;">⬅ Volver al Mapa</a>
+            <button class="btn-secondary" onclick="window.logout()" style="width:auto; padding:8px 16px;">Salir</button>
         </div>
     </header>
 
@@ -164,6 +179,12 @@
 
         // Arrancamos todo
         iniciarPagina();
+
+        window.logout = function () {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        };
     </script>
 </body>
 

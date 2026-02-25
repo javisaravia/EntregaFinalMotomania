@@ -27,6 +27,17 @@
     <header class="header-app">
         <h2>🏍️ MotoManía</h2>
         <div class="header-buttons">
+            <div class="dropdown" id="dropdown-rutas">
+                <button class="btn-secondary dropdown-toggle" style="width:auto; padding:8px 16px;"
+                    onclick="this.parentElement.classList.toggle('active')">
+                    🗺️ Rutas
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="window.activarModoCreacion()">➕ Crear Nueva Ruta</button>
+                    <button class="dropdown-item" onclick="window.cargarVerMisRutas()">📍 Mis Rutas Guardadas</button>
+                    <button class="dropdown-item" onclick="window.verFavoritas()">⭐ Rutas Favoritas</button>
+                </div>
+            </div>
             <a href="clubs.html" class="btn-secondary" style="width:auto; padding:8px 16px;">🧥 Clubes</a>
             <button class="btn-secondary" onclick="window.logout()" style="width:auto; padding:8px 16px;">Salir</button>
         </div>
@@ -34,18 +45,7 @@
     <div class="main-container">
         <aside class="sidebar" id="main-sidebar">
             <span class="close-sidebar-btn" onclick="window.toggleSidebar(false)">×</span>
-            <div class="dropdown" id="dropdown-rutas">
-                <button class="btn-secondary dropdown-toggle" onclick="this.parentElement.classList.toggle('active')">
-                    🗺️ Opciones de Ruta
-                </button>
-                <div class="dropdown-menu">
-                    <button class="dropdown-item" onclick="window.activarModoCreacion()">➕ Crear Nueva Ruta</button>
-                    <button class="dropdown-item" onclick="window.cargarVerMisRutas()">📍 Ver mis rutas
-                        guardadas</button>
-                    <button class="dropdown-item" onclick="window.verFavoritas()">⭐ Rutas favoritas</button>
-                </div>
-            </div>
-            <div id="lista-rutas" style="margin-top: 15px;"></div>
+            <div id="lista-rutas" style="margin-top: 5px;"></div>
         </aside>
         <div id="map"></div>
         <div id="route-details-panel">
