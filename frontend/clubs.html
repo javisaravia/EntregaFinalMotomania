@@ -222,11 +222,11 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    mostrarToast("🎉 ¡Te has unido con éxito!", "success");
+                    alert('¡Bienvenido al club! Ya eres un miembro oficial.');
                     misClubesIds = [];
-                    iniciarPagina();
+                    iniciarPagina(); // Recargar listas
                 } else {
-                    mostrarToast(data.error || "No se pudo unir al club", "error");
+                    alert(data.error || "No se pudo unir al club");
                 }
             } catch (error) {
                 mostrarToast("Error de conexión", "error");

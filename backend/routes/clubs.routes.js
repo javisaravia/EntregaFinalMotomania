@@ -20,8 +20,8 @@ router.get('/mis-clubes/:userId', async (req, res) => {
         // SQL: Unimos la tabla 'clubs' con 'user_clubs' para sacar solo los míos
         const sql = `
             SELECT c.* FROM clubs c
-            JOIN club_members cm ON c.id = cm.club_id
-            WHERE cm.user_id = ?
+            JOIN user_clubs uc ON c.id = uc.club_id
+            WHERE uc.user_id = ?
         `;
         const [misClubes] = await db.query(sql, [userId]);
         res.json(misClubes);
@@ -32,33 +32,28 @@ router.get('/mis-clubes/:userId', async (req, res) => {
     }
 });
 
-// 3. UNIRSE A UN CLUB
+// 3. UNIRSE A UN CLUB (POST /join)
 router.post('/join', async (req, res) => {
+    // Extraemos club_id y user_id del body (el frontend debe enviarlos así o mapeamos)
     const { userId, clubId } = req.body;
 
     if (!userId || !clubId) {
-        return res.status(400).json({ error: "Faltan datos (usuario o club)" });
+        return res.status(400).json({ error: "Faltan datos (userId o clubId)" });
     }
 
     try {
-        // A. Comprobar si ya existe la unión
-        const [existe] = await db.query(
-            'SELECT * FROM club_members WHERE user_id = ? AND club_id = ?', 
-            [userId, clubId]
-        );
-
-        if (existe.length > 0) {
-            return res.status(400).json({ error: "¡Ya eres miembro de este club!" });
-        }
-
-        // B. Insertar
-        await db.query('INSERT INTO club_members (user_id, club_id) VALUES (?, ?)', [userId, clubId]);
+        // Usamos la consulta específica solicitada por el usuario
+        const sql = 'INSERT INTO user_clubs (club_id, user_id) VALUES (?, ?)';
+        await db.query(sql, [clubId, userId]);
         
         res.json({ message: "¡Unión exitosa!" });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Error de base de datos" });
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: "¡Ya eres miembro de este club!" });
+        }
+        console.error("🔥 Error en /join:", error.message);
+        res.status(500).json({ error: "No se pudo unir al club" });
     }
 });
 
