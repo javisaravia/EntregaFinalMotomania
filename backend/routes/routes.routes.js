@@ -64,20 +64,23 @@ router.post('/comentar', async (req, res) => {
     }
 });
 
-// 4. OBTENER COMENTARIOS
-router.get('/:route_id/comentarios', async (req, res) => {
-    const { route_id } = req.params;
+// --- OBTENER COMENTARIOS DE UNA RUTA ESPECÍFICA (GET) ---
+router.get('/:id/comentarios', async (req, res) => {
+    const routeId = req.params.id;
     try {
-        const [results] = await db.query(
-            `SELECT c.*, u.username FROM route_comments c 
-             JOIN users u ON c.user_id = u.id 
-             WHERE c.route_id = ? ORDER BY c.created_at DESC`,
-            [route_id]
-        );
-        res.json(results);
+        // Buscamos los comentarios y el nombre del usuario que los hizo
+        const query = `
+            SELECT rc.*, u.username 
+            FROM route_comments rc
+            JOIN users u ON rc.user_id = u.id
+            WHERE rc.route_id = ?
+            ORDER BY rc.created_at DESC
+        `;
+        const [rows] = await db.query(query, [routeId]);
+        res.json(rows); // Esto enviará el JSON que el frontend espera
     } catch (error) {
-        console.error("Error en GET comentarios:", error.message);
-        res.status(500).json({ error: "Error al obtener comentarios" });
+        console.error("🔥 Error al obtener comentarios:", error.message);
+        res.status(500).json({ error: "No se pudieron cargar los comentarios" });
     }
 });
 
