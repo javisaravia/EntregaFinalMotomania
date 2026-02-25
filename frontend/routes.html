@@ -295,11 +295,11 @@
             throw new Error("Redirecting to login...");
         }
 
-        function logout() {
+        window.logout = () => {
             localStorage.removeItem('user');
             localStorage.removeItem('token');
             window.location.href = 'index.html';
-        }
+        };
 
         // --- 2. MAPA ---
         if (typeof L === 'undefined') {
@@ -320,12 +320,12 @@
         let puntoInicio = null;
         let marcadorInicio = null;
 
-        function activarModoCreacion() {
+        window.activarModoCreacion = () => {
             modoCreacion = true; puntoInicio = null;
             if (marcadorInicio) map.removeLayer(marcadorInicio);
             document.getElementById('map').style.cursor = 'crosshair';
             mostrarToast("1️⃣ Selecciona el punto de SALIDA en el mapa", "success");
-        }
+        };
 
         map.on('click', async function (e) {
             if (!modoCreacion) return;
@@ -427,7 +427,7 @@
                         </div>
                         <div class="rating">${stars} (${ruta.comment_count} 💬)</div>
                     `;
-                    item.onclick = () => mostrarDetallesRuta(ruta);
+                    item.onclick = () => window.mostrarDetallesRuta(ruta);
                     contenedor.appendChild(item);
                 });
             } catch (e) {
@@ -435,7 +435,7 @@
             }
         }
 
-        async function mostrarDetallesRuta(ruta) {
+        window.mostrarDetallesRuta = async (ruta) => {
             currentRouteId = ruta.id;
             const coords = JSON.parse(ruta.coordinates);
             routeStartCoords = Array.isArray(coords[0]) ? coords[0] : coords;
@@ -451,12 +451,12 @@
 
             cargarComentarios(ruta.id);
             actualizarUIStars(ruta.avg_rating);
-        }
+        };
 
-        function cerrarDetalles() {
+        window.cerrarDetalles = () => {
             document.getElementById('route-details-panel').classList.remove('active');
             currentRouteId = null;
-        }
+        };
 
         const stars = document.querySelectorAll('#star-rating-ui .star');
         stars.forEach(star => {
@@ -522,7 +522,7 @@
             }
         }
 
-        async function subirComentario() {
+        window.subirComentario = async () => {
             const text = document.getElementById('comment-text').value;
             const fileInput = document.getElementById('comment-file');
 

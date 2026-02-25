@@ -206,8 +206,12 @@
     </div>
 
     <script type="module">
-        // Importación corregida para coincidir con el bundle de Vite (A en lugar de API_BASE_URL)
-        import { A as API_BASE_URL } from './assets/config-B_CD02Rf.js';
+        // Importación silenciosa (si falla, usaremos el fallback global de window)
+        let BASE_URL = 'https://entregafinalmotomania.onrender.com';
+        try {
+            const config = await import('./assets/config-B_CD02Rf.js');
+            BASE_URL = config.A || config.API_BASE_URL || window.API_BASE_URL || BASE_URL;
+        } catch (e) { console.warn("Usando URL de respaldo:", BASE_URL); }
 
         // --- GLOBALES PARA HTML ---
         window.logout = () => {
@@ -215,6 +219,10 @@
             localStorage.removeItem('user');
             localStorage.removeItem('token');
             window.location.href = 'index.html';
+        };
+
+        window.cerrarDetalles = () => {
+            document.getElementById('route-details-panel').classList.remove('active');
         };
 
         // --- SEGURIDAD ---
@@ -235,14 +243,14 @@
             modoCreacion = true; puntoInicio = null;
             if (marcadorInicio) map.removeLayer(marcadorInicio);
             document.getElementById('map').style.cursor = 'crosshair';
-            alert("1. Clic en SALIDA | 2. Clic en LLEGADA");
+            alert("MODO CREACIÓN: 1. Clic en punto de SALIDA | 2. Clic en punto de LLEGADA");
         };
 
         map.on('click', async (e) => {
             if (!modoCreacion) return;
             if (!puntoInicio) {
                 puntoInicio = e.latlng;
-                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida").openPopup();
+                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida marcadas").openPopup();
                 return;
             }
             const puntoFinal = e.latlng;
@@ -252,9 +260,9 @@
                 const d = await (await fetch(url)).json();
                 if (d.routes && d.routes.length > 0) {
                     const r = d.routes[0], coords = L.geoJSON(r.geometry).getLayers()[0].getLatLngs();
-                    const titulo = prompt("Nombre:");
+                    const titulo = prompt("Dale un nombre a tu ruta:");
                     if (!titulo) return;
-                    const res = await fetch(`${API_BASE_URL}/api/rutas/guardar`, {
+                    const res = await fetch(`${BASE_URL}/api/rutas/guardar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -262,9 +270,10 @@
                             distancia: (r.distance / 1000).toFixed(2), duracion: Math.round(r.duration / 60)
                         })
                     });
-                    if (res.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
+                    if (res.ok) { alert("¡Ruta guardada exitosamente!"); cargarMisRutas(); }
+                    else { const err = await res.json(); alert("Error: " + (err.detalles || err.error)); }
                 }
-            } catch (e) { console.error(e); } finally {
+            } catch (e) { alert("Fallo al conectar con el servidor."); } finally {
                 modoCreacion = false; document.getElementById('spinner').style.display = 'none';
                 if (marcadorInicio) map.removeLayer(marcadorInicio);
                 document.getElementById('map').style.cursor = '';
@@ -272,67 +281,87 @@
         });
 
         async function cargarMisRutas() {
-            const c = document.getElementById('lista-rutas');
+            const container = document.getElementById('lista-rutas');
+            container.innerHTML = "Cargando tus rutas...";
             try {
-                const rs = await (await fetch(`${API_BASE_URL}/api/rutas/${currentUserId}`)).json();
-                c.innerHTML = rs.map(r => `
-                    <div class="db-route-item" onclick="window.mostrarDetallesRuta(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+                const res = await fetch(`${BASE_URL}/api/rutas/${currentUserId}`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    container.innerHTML = `<p style="color:red">Error 500: ${err.detalles || 'Fallo del servidor'}</p>`;
+                    return;
+                }
+                const rs = await res.json();
+                if (rs.length === 0) {
+                    container.innerHTML = "No tienes rutas guardadas todavía.";
+                    return;
+                }
+                container.innerHTML = rs.map(r => `
+                    <div class="db-route-item" onclick='window.mostrarDetallesRuta(${JSON.stringify(r)})'>
                         <h4>${r.title}</h4>
                         <small>${r.distance} Km | ${r.duration} min</small>
                     </div>
                 `).join('');
-            } catch (e) { }
+            } catch (e) { container.innerHTML = "Error de conexión con la API."; }
         }
 
         window.mostrarDetallesRuta = (r) => {
             currentRouteId = r.id;
             document.getElementById('panel-title').innerText = r.title;
-            document.getElementById('panel-desc').innerText = r.description || '';
-            document.getElementById('panel-stats').innerHTML = `${r.distance} Km | ${r.duration} min`;
+            document.getElementById('panel-desc').innerText = r.description || 'Sin descripción';
+            document.getElementById('panel-stats').innerHTML = `Distancia: ${r.distance} Km | Tiempo: ${r.duration} min`;
             document.getElementById('route-details-panel').classList.add('active');
             const coords = JSON.parse(r.coordinates);
-            const poly = L.polyline(coords, { color: 'red' }).addTo(map);
+            const poly = L.polyline(coords, { color: 'red', weight: 5 }).addTo(map);
             map.fitBounds(poly.getBounds());
             cargarComentarios(r.id);
         };
 
-        window.cerrarDetalles = () => document.getElementById('route-details-panel').classList.remove('active');
-
         async function cargarComentarios(id) {
             const c = document.getElementById('comments-container');
+            c.innerHTML = "Cargando comentarios...";
             try {
-                const cms = await (await fetch(`${API_BASE_URL}/api/rutas/${id}/comentarios`)).json();
-                c.innerHTML = cms.map(cm => `<div><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
-            } catch (e) { }
+                const res = await fetch(`${BASE_URL}/api/rutas/${id}/comentarios`);
+                const cms = await res.json();
+                c.innerHTML = cms.map(cm => `
+                    <div style="padding:5px; border-bottom:1px solid #333">
+                        <b>@${cm.username}:</b> ${cm.comment}
+                    </div>
+                `).join('');
+            } catch (e) { c.innerHTML = "No se pudieron cargar los comentarios."; }
         }
 
         window.subirComentario = async () => {
             const t = document.getElementById('comment-text').value;
             if (!t) return;
             try {
-                const res = await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/comentarios`, {
+                const res = await fetch(`${BASE_URL}/api/rutas/${currentRouteId}/comentarios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: currentUserId, comentario: t })
                 });
-                if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
-            } catch (e) { }
+                if (res.ok) {
+                    document.getElementById('comment-text').value = '';
+                    cargarComentarios(currentRouteId);
+                    alert("¡Comentario publicado!");
+                }
+            } catch (e) { alert("Fallo al publicar comentario."); }
         };
 
         document.querySelectorAll('.star').forEach(s => {
             s.onclick = async () => {
                 const v = s.dataset.value;
                 try {
-                    await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/valorar`, {
+                    const res = await fetch(`${BASE_URL}/api/rutas/${currentRouteId}/valorar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ user_id: currentUserId, rating: v })
                     });
-                    alert("¡Gracias!");
+                    if (res.ok) alert("¡Valoración guardada!");
                 } catch (e) { }
             }
         });
 
+        // Cargar rutas al iniciar
         cargarMisRutas();
     </script>
 </body>

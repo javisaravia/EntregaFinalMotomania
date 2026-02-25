@@ -122,16 +122,26 @@ router.post('/:route_id/valorar', async (req, res) => {
 
 // RUTA PARA LEER (Mis rutas + media de valoración + conteo de comentarios)
 router.get('/:usuario_id', async (req, res) => {
+    console.log(`🔍 [DEBUG] Buscando rutas para usuario ID: ${req.params.usuario_id}`);
     try {
         const sql = `
             SELECT r.*, 
             (SELECT AVG(rating) FROM route_ratings WHERE route_id = r.id) as avg_rating,
             (SELECT COUNT(*) FROM route_comments WHERE route_id = r.id) as comment_count
             FROM routes r WHERE r.user_id = ?`;
+        
         const [rutas] = await db.query(sql, [req.params.usuario_id]);
+        console.log(`✅ [SUCCESS] Encontradas ${rutas.length} rutas.`);
         res.json(rutas);
     } catch (error) {
-        res.status(500).json({ error: "Error al leer rutas" });
+        console.error("🔥 [ERROR GET RUTAS] Fallo al obtener rutas:");
+        console.error("   Mensaje:", error.message);
+        if (error.sqlMessage) console.error("   SQL Message:", error.sqlMessage);
+        
+        res.status(500).json({ 
+            error: "Error al leer rutas", 
+            detalles: error.sqlMessage || error.message 
+        });
     }
 });
 
