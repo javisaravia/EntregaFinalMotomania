@@ -168,7 +168,7 @@
         <h2>🏍️ MotoManía</h2>
         <div class="header-buttons">
             <a href="clubs.html" class="btn-clubs-link">🧥 Clubes</a>
-            <button class="btn-logout" onclick="logout()">Salir</button>
+            <button class="btn-logout" onclick="window.logout()">Salir</button>
         </div>
     </header>
 
@@ -176,14 +176,14 @@
         <aside class="sidebar">
             <div>
                 <h3>Mis Rutas</h3>
-                <button class="btn-primary" onclick="activarModoCreacion()">+ Crear Nueva Ruta</button>
+                <button class="btn-primary" onclick="window.activarModoCreacion()">+ Crear Nueva Ruta</button>
                 <div id="lista-rutas" style="margin-top: 15px;"></div>
             </div>
         </aside>
         <div id="map"></div>
 
         <div id="route-details-panel">
-            <span class="close-panel" onclick="cerrarDetalles()">&times;</span>
+            <span class="close-panel" onclick="window.cerrarDetalles()">&times;</span>
             <h3 id="panel-title"></h3>
             <p id="panel-desc"></p>
             <div id="panel-stats"></div>
@@ -200,30 +200,45 @@
                 <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
                     style="width:100%"></textarea>
                 <input type="file" id="comment-file" accept="image/*">
-                <button class="btn-primary" onclick="subirComentario()">Publicar</button>
+                <button class="btn-primary" onclick="window.subirComentario()">Publicar</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        // Importación silenciosa (si falla, usaremos el fallback global de window)
-        let BASE_URL = 'https://entregafinalmotomania.onrender.com';
-        try {
-            const config = await import('./assets/config-B_CD02Rf.js');
-            BASE_URL = config.A || config.API_BASE_URL || window.API_BASE_URL || BASE_URL;
-        } catch (e) { console.warn("Usando URL de respaldo:", BASE_URL); }
-
-        // --- GLOBALES PARA HTML ---
-        window.logout = () => {
+    <!-- SCRIPT DE INICIALIZACIÓN GLOBAL (Sin dependencias de módulos para que no falle) -->
+    <script>
+        window.logout = function () {
             console.log("🚪 Cerrando sesión...");
             localStorage.removeItem('user');
             localStorage.removeItem('token');
             window.location.href = 'index.html';
         };
 
-        window.cerrarDetalles = () => {
+        window.cerrarDetalles = function () {
             document.getElementById('route-details-panel').classList.remove('active');
         };
+
+        window.activarModoCreacion = function () {
+            if (window.iniciarCreacionManual) {
+                window.iniciarCreacionManual();
+            } else {
+                alert("El sistema de mapas aún se está cargando. Espera un segundo...");
+            }
+        };
+
+        window.subirComentario = function () {
+            if (window.procesarComentarioManual) {
+                window.procesarComentarioManual();
+            }
+        };
+    </script>
+
+    <script type="module">
+        let BASE_URL = 'https://entregafinalmotomania.onrender.com';
+        try {
+            const config = await import('./assets/config-B_CD02Rf.js');
+            BASE_URL = config.A || config.API_BASE_URL || window.API_BASE_URL || BASE_URL;
+        } catch (e) { console.warn("Usando URL de respaldo:", BASE_URL); }
 
         // --- SEGURIDAD ---
         let currentUserId = null;
@@ -239,7 +254,7 @@
 
         let modoCreacion = false, puntoInicio = null, marcadorInicio = null, currentRouteId = null;
 
-        window.activarModoCreacion = () => {
+        window.iniciarCreacionManual = () => {
             modoCreacion = true; puntoInicio = null;
             if (marcadorInicio) map.removeLayer(marcadorInicio);
             document.getElementById('map').style.cursor = 'crosshair';
@@ -250,7 +265,7 @@
             if (!modoCreacion) return;
             if (!puntoInicio) {
                 puntoInicio = e.latlng;
-                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida marcadas").openPopup();
+                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("Salida marcada").openPopup();
                 return;
             }
             const puntoFinal = e.latlng;
@@ -291,10 +306,6 @@
                     return;
                 }
                 const rs = await res.json();
-                if (rs.length === 0) {
-                    container.innerHTML = "No tienes rutas guardadas todavía.";
-                    return;
-                }
                 container.innerHTML = rs.map(r => `
                     <div class="db-route-item" onclick='window.mostrarDetallesRuta(${JSON.stringify(r)})'>
                         <h4>${r.title}</h4>
@@ -323,14 +334,14 @@
                 const res = await fetch(`${BASE_URL}/api/rutas/${id}/comentarios`);
                 const cms = await res.json();
                 c.innerHTML = cms.map(cm => `
-                    <div style="padding:5px; border-bottom:1px solid #333">
+                    <div style="padding:5px; border-bottom:1px solid #333; font-size: 0.9rem;">
                         <b>@${cm.username}:</b> ${cm.comment}
                     </div>
                 `).join('');
             } catch (e) { c.innerHTML = "No se pudieron cargar los comentarios."; }
         }
 
-        window.subirComentario = async () => {
+        window.procesarComentarioManual = async () => {
             const t = document.getElementById('comment-text').value;
             if (!t) return;
             try {
@@ -361,7 +372,6 @@
             }
         });
 
-        // Cargar rutas al iniciar
         cargarMisRutas();
     </script>
 </body>

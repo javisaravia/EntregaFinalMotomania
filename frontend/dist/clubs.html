@@ -100,9 +100,23 @@
         <div id="todos-clubes-container" class="grid">Cargando...</div>
     </div>
 
+    <!-- SCRIPT GLOBAL PREVIO -->
+    <script>
+        window.unirse = function (id, name) {
+            if (window.unirseManual) {
+                window.unirseManual(id, name);
+            } else {
+                alert("Cargando sistema de clubes...");
+            }
+        };
+    </script>
+
     <script type="module">
-        // Importación corregida para coincidir con el bundle de Vite (A en lugar de API_BASE_URL)
-        import { A as API_BASE_URL } from './assets/config-B_CD02Rf.js';
+        let BASE_URL = 'https://entregafinalmotomania.onrender.com';
+        try {
+            const config = await import('./assets/config-B_CD02Rf.js');
+            BASE_URL = config.A || config.API_BASE_URL || window.API_BASE_URL || BASE_URL;
+        } catch (e) { }
 
         let currentUserId = null;
         try {
@@ -114,7 +128,8 @@
 
         async function cargar() {
             try {
-                const mc = await (await fetch(`${API_BASE_URL}/api/clubs/mis-clubes/${currentUserId}`)).json();
+                const res = await fetch(`${BASE_URL}/api/clubs/mis-clubes/${currentUserId}`);
+                const mc = await res.json();
                 misIds = mc.map(c => c.id);
                 document.getElementById('mis-clubes-container').innerHTML = mc.map(c => `
                     <div class="club-card">
@@ -124,29 +139,31 @@
                     </div>
                 `).join('') || 'Aún no perteneces a ningún club.';
 
-                const todos = await (await fetch(`${API_BASE_URL}/api/clubs`)).json();
+                const resAll = await fetch(`${BASE_URL}/api/clubs`);
+                const todos = await resAll.json();
                 document.getElementById('todos-clubes-container').innerHTML = todos
                     .filter(c => !misIds.includes(c.id))
                     .map(c => `
                         <div class="club-card">
                             <h3>${c.name}</h3>
                             <p>${c.description || ''}</p>
-                            <button class="btn-primary" onclick="window.unirse(${c.id}, '${c.name}')">Unirse</button>
+                            <button class="btn-primary" onclick="window.unirse(${c.id}, '${c.name.replace(/'/g, "\\'")}')">Unirse</button>
                         </div>
                     `).join('') || '¡Ya estás en todos los clubes!';
             } catch (e) { }
         }
 
-        window.unirse = async (id, name) => {
+        window.unirseManual = async (id, name) => {
             if (!confirm(`¿Unirse a ${name}?`)) return;
             try {
-                const res = await fetch(`${API_BASE_URL}/api/clubs/join`, {
+                const res = await fetch(`${BASE_URL}/api/clubs/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: currentUserId, clubId: id })
                 });
                 if (res.ok) { alert("¡Bienvenido!"); cargar(); }
-            } catch (e) { }
+                else { const err = await res.json(); alert("Error: " + err.error); }
+            } catch (e) { alert("Error de conexión."); }
         };
 
         cargar();
