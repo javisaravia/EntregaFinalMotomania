@@ -22,11 +22,18 @@
     </header>
     <div class="main-container">
         <aside class="sidebar">
-            <div>
-                <h3>Mis Rutas</h3>
-                <button class="btn-primary" onclick="window.activarModoCreacion()">+ Crear Nueva Ruta</button>
-                <div id="lista-rutas" style="margin-top: 15px;"></div>
+            <div class="dropdown" id="dropdown-rutas">
+                <button class="btn-secondary dropdown-toggle" onclick="this.parentElement.classList.toggle('active')">
+                    🗺️ Opciones de Ruta
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="window.activarModoCreacion()">➕ Crear Nueva Ruta</button>
+                    <button class="dropdown-item" onclick="window.cargarVerMisRutas()">📍 Ver mis rutas
+                        guardadas</button>
+                    <button class="dropdown-item" onclick="window.verFavoritas()">⭐ Rutas favoritas</button>
+                </div>
             </div>
+            <div id="lista-rutas" style="margin-top: 15px;"></div>
         </aside>
         <div id="map"></div>
         <div id="route-details-panel">
@@ -34,14 +41,21 @@
             <h3 id="panel-title"></h3>
             <p id="panel-desc"></p>
             <div id="panel-stats" style="margin-bottom:15px; font-size:0.9rem;"></div>
-            <div id="star-rating-ui">
-                <span class="star" data-value="1">★</span>
-                <span class="star" data-value="2">★</span>
-                <span class="star" data-value="3">★</span>
-                <span class="star" data-value="4">★</span>
-                <span class="star" data-value="5">★</span>
+
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <p
+                    style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px;">
+                    Tu valoración</p>
+                <div id="star-rating-ui">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                <div id="rating-status-container"></div>
+                <p id="avg-rating-text" style="font-size:0.85rem; font-weight: 600; color:var(--text-secondary);"></p>
             </div>
-            <p id="avg-rating-text" style="font-size:0.8rem; color:#888;"></p>
             <div id="comments-container" style="margin-top:10px;"></div>
             <div class="comment-form" style="margin-top:20px;">
                 <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
@@ -157,99 +171,97 @@
             document.getElementById('panel-desc').innerText = r.description || 'Sin descripción';
             document.getElementById('panel-stats').innerHTML = `Distancia: ${r.distance} Km | Tiempo: ${r.duration} min`;
             document.getElementById('route-details-panel').classList.add('active');
+
             const coords = JSON.parse(r.coordinates);
             const poly = L.polyline(coords, { color: 'red', weight: 5 }).addTo(map);
             map.fitBounds(poly.getBounds());
+
             cargarComentarios(r.id);
-            document.querySelectorAll('.star').forEach(s => {
-                s.classList.remove('active');
-                if (parseInt(s.dataset.value) <= Math.round(r.avg_rating || 0)) s.classList.add('active');
-            });
+            cargarValoracionMedia(r.id);
+
+            // Reset stars UI
+            actualizarEstrellasUI(0);
         };
 
-        async function cargarComentarios(id) {
-            if (!id) return;
-            const c = document.getElementById('comments-container');
-            // NO ponemos "Cargando..." aquí para evitar saltos bruscos si el usuario prefiere limpieza
-            c.innerHTML = '';
+        async function cargarValoracionMedia(id) {
+            const text = document.getElementById('avg-rating-text');
+            text.style.opacity = '0.5';
             try {
-                const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
-                // SEGURIDAD: Solo parsear si la respuesta es OK
-                if (!res.ok) {
-                    console.error("⚠️ Error servidor al cargar comentarios");
-                    return;
-                }
-                const cms = await res.json();
-                if (cms.length === 0) {
-                    c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún. ¡Sé el primero!</p>';
-                } else {
-                    c.innerHTML = cms.map(cm => `
-                        <div style="padding:10px; border-bottom:1px solid #334155; font-size:0.85rem; color:#f1f5f9;">
-                            <b style="color:var(--accent-primary)">@${cm.username}:</b> ${cm.comment}
-                        </div>
-                    `).join('');
-                }
+                const res = await fetch(`${BASE_URL}/api/routes/${id}/valoracion-media`);
+                const data = await res.json();
+                const media = parseFloat(data.media) || 0;
+                text.innerText = media > 0 ? `Valoración media: ${media.toFixed(1)} ★` : 'Sin valoraciones aún';
+                actualizarEstrellasUI(Math.round(media));
             } catch (e) {
-                console.error("🔥 Error fatídico cargando comentarios:", e.message);
+                text.innerText = 'Error al cargar valoración';
+            } finally {
+                text.style.opacity = '1';
             }
         }
 
-        window.manualSubmitComment = async () => {
-            const t = document.getElementById('comment-text');
-            const commentVal = t.value.trim();
-
-            // Obtenemos ID de la ruta: prioridad variable global, luego URL param
-            const urlParams = new URLSearchParams(window.location.search);
-            const routeId = currentRouteId || urlParams.get('route_id');
-
-            if (!commentVal) return alert("Escribe algo antes de publicar.");
-            if (!routeId) return alert("Error: No se ha detectado la ruta seleccionada.");
-
-            try {
-                const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, comment: commentVal })
-                });
-
-                if (res.ok) {
-                    alert('¡Gracias por publicar tu comentario!');
-                    t.value = ''; // Limpiar textarea
-                    cargarComentarios(routeId); // Refresco automático
-                } else {
-                    // Evitar 'Unexpected token <' si el servidor escupe un HTML de error (404/500)
-                    const errorText = await res.text();
-                    console.error("❌ Error del servidor:", errorText);
-                    alert("No se pudo publicar el comentario. Revisa la consola.");
+        function actualizarEstrellasUI(rating, isHover = false) {
+            document.querySelectorAll('.star').forEach(s => {
+                const val = parseInt(s.dataset.value);
+                s.classList.remove('active', 'hovered');
+                if (val <= rating) {
+                    s.classList.add(isHover ? 'hovered' : 'active');
                 }
-            } catch (e) {
-                console.error("🔥 Error de conexión:", e.message);
-                alert("Error de conexión al publicar.");
-            }
-        };
+            });
+        }
 
         window.manualSubmitRating = async (rating) => {
             if (!currentRouteId) return alert("Selecciona una ruta antes de valorar.");
+
+            // FEEDBACK INSTANTÁNEO
+            actualizarEstrellasUI(rating);
+            const status = document.getElementById('rating-status-container');
+            status.innerHTML = '<p style="color:#fbbf24; font-size:0.75rem; font-weight:700;">Guardando...</p>';
+
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/valorar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, rating: rating })
                 });
+
                 if (res.ok) {
-                    alert("¡Gracias por tu valoración!");
-                    cargarMisRutas(); // Recargar para ver la nueva media
+                    const data = await res.json();
+                    status.innerHTML = '<div class="rating-saved-msg">¡Valoración guardada!</div>';
+
+                    // Actualizar texto de media con el valor devuelto si existe
+                    if (data.newMedia !== undefined) {
+                        const media = parseFloat(data.newMedia);
+                        document.getElementById('avg-rating-text').innerText = `Valoración media: ${media.toFixed(1)} ★`;
+                    }
+
+                    cargarMisRutas(); // Refrescar lista lateral
                 } else {
-                    const errorMsg = await res.text();
-                    console.error("⚠️ Error rating:", errorMsg);
-                    alert("Error al valorar.");
+                    status.innerHTML = '';
+                    alert("Error al guardar valoración.");
                 }
             } catch (e) {
-                console.error("🔥 Error conexión rating:", e.message);
+                status.innerHTML = '';
+                console.error("Error rating:", e);
             }
         };
 
+        // DROPDOWN FUNCTIONS (Placeholders or logic)
+        window.cargarVerMisRutas = () => {
+            cargarMisRutas();
+            document.getElementById('dropdown-rutas').classList.remove('active');
+        };
+        window.verFavoritas = () => {
+            alert("¡Próximamente! Podrás ver tus rutas favoritas aquí.");
+            document.getElementById('dropdown-rutas').classList.remove('active');
+        };
+
         document.querySelectorAll('.star').forEach(star => {
+            star.onmouseover = () => actualizarEstrellasUI(parseInt(star.dataset.value), true);
+            star.onmouseout = () => {
+                // Restauramos a la media actual (o 0 si no hay seleccionada)
+                // Nota: Para ser más precisos necesitaríamos guardar la selección del usuario
+                // Por ahora restauramos simplemente vaciando si el user no ha clicado o refrescando media
+            };
             star.onclick = () => window.enviarValoracion(parseInt(star.dataset.value));
         });
 

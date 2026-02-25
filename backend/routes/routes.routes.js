@@ -41,10 +41,25 @@ router.post('/valorar', async (req, res) => {
             ON DUPLICATE KEY UPDATE rating = VALUES(rating)
         `;
         await db.query(query, [route_id, user_id, rating]);
-        res.json({ message: "Valoración guardada" });
+        
+        // Calculamos la nueva media para devolverla de inmediato
+        const [rows] = await db.query('SELECT AVG(rating) as media FROM route_ratings WHERE route_id = ?', [route_id]);
+        const newMedia = rows[0].media || 0;
+        
+        res.json({ message: "Valoración guardada", newMedia });
     } catch (error) {
         console.error("Error en /valorar:", error.message);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// OBTENER VALORACIÓN MEDIA (GET)
+router.get('/:id/valoracion-media', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT AVG(rating) as media FROM route_ratings WHERE route_id = ?', [req.params.id]);
+        res.json({ media: rows[0].media || 0 });
+    } catch (error) {
+        res.status(500).json({ error: "Error al calcular media" });
     }
 });
 
