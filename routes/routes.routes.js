@@ -62,11 +62,12 @@ router.post('/guardar', async (req, res) => {
 router.post('/comentar', async (req, res) => {
     const { route_id, user_id, comment } = req.body;
     try {
-        await db.query('INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)',
-            [route_id, user_id, comment]);
-        res.json({ msg: "Comentario añadido" });
+        const query = 'INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)';
+        await db.query(query, [route_id, user_id, comment]);
+        res.json({ message: "Comentario guardado" });
     } catch (error) {
-        res.status(500).json({ error: "Error al añadir comentario" });
+        console.error("Error en /comentar:", error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -74,14 +75,16 @@ router.post('/comentar', async (req, res) => {
 router.post('/valorar', async (req, res) => {
     const { route_id, user_id, rating } = req.body;
     try {
-        await db.query(
-            'INSERT INTO route_ratings (route_id, user_id, rating) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE rating = ?',
-            [route_id, user_id, rating, rating]
-        );
-        const [result] = await db.query('SELECT AVG(rating) as media FROM route_ratings WHERE route_id = ?', [route_id]);
-        res.json({ msg: "Valoración guardada", media: result[0].media || 0 });
+        const query = `
+            INSERT INTO route_ratings (route_id, user_id, rating) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE rating = VALUES(rating)
+        `;
+        await db.query(query, [route_id, user_id, rating]);
+        res.json({ message: "Valoración guardada" });
     } catch (error) {
-        res.status(500).json({ error: "Error al valorar" });
+        console.error("Error en /valorar:", error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 

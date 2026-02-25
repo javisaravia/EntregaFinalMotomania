@@ -345,6 +345,7 @@
         };
 
         window.manualSubmitRating = async (rating) => {
+            if (!currentRouteId) return;
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/valorar`, {
                     method: 'POST',
@@ -353,13 +354,14 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    document.getElementById('avg-rating-text').innerText = `Media: ${data.media.toFixed(1)} ★`;
-                    document.querySelectorAll('.star').forEach(s => {
-                        s.classList.remove('active');
-                        if (parseInt(s.dataset.value) <= rating) s.classList.add('active');
-                    });
-                }
-            } catch (e) { }
+                    alert("¡Gracias por tu valoración!");
+                    cargarMisRutas(); // Recargar para ver la nueva media
+                    // Opcional: actualizar UI localmente
+                    if (data.media !== undefined) {
+                        document.getElementById('avg-rating-text').innerText = `Media: ${data.media.toFixed(1)} ★`;
+                    }
+                } else { alert("Error al valorar."); }
+            } catch (e) { console.error("Error rating:", e); }
         };
 
         document.querySelectorAll('.star').forEach(star => {
