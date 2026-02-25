@@ -40,6 +40,9 @@ function mostrarToast(mensaje, tipo = 'success') {
     }, 3000);
 }
 
+// Exponer globalmente para que funcione con scripts inline y Vite
+window.mostrarToast = mostrarToast;
+
 // 2. Control del Spinner de Carga
 function toggleSpinner(show) {
     let spinner = document.getElementById('loading-spinner');
@@ -58,3 +61,6 @@ function toggleSpinner(show) {
         spinner.classList.remove('active');
     }
 }
+
+// Exponer globalmente
+window.toggleSpinner = toggleSpinner;
