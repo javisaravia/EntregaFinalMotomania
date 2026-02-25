@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutas - Motomanía</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA RUTAS */
+        body {
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-primary);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 72px);
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            overflow-y: auto;
+            padding: 25px;
+            border-right: 1px solid var(--input-border);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+            background-color: #0b0f1a;
+            z-index: 1;
+        }
+
+        .header-app h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .btn-logout {
+            background: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-logout:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-clubs-link {
+            background: var(--bg-primary);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--input-border);
+            transition: all 0.3s;
+        }
+
+        .btn-clubs-link:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Tarjetas de Ruta */
+        .db-route-item {
+            background: var(--bg-primary);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--accent-primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-top: 1px solid var(--input-border);
+            border-right: 1px solid var(--input-border);
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .db-route-item:hover {
+            transform: scale(1.02);
+            background: #1e293b;
+        }
+
+        .db-route-item h4 {
+            margin: 0 0 5px 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .db-route-item .stats {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .db-route-item .rating {
+            color: #fbbf24;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        h3 {
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* PANEL DE DETALLES */
+        #route-details-panel {
+            position: fixed;
+            right: -400px;
+            top: 72px;
+            width: 380px;
+            height: calc(100vh - 72px);
+            background: var(--bg-secondary);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--input-border);
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #route-details-panel.active {
+            right: 0;
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-panel:hover {
+            color: var(--accent-primary);
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .detail-section h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Social Wall */
+        .comment-item {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            border: 1px solid var(--input-border);
+        }
+
+        .comment-item .user {
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .comment-form textarea {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: white;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            width: 100%;
+            font-family: var(--font-main);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header-app">
+        <h2>🏍️ MotoManía</h2>
+        <div class="header-buttons">
+            <a href="clubs.html" class="btn-clubs-link">🧥 Clubes</a>
+            <button class="btn-logout" onclick="logout()">Salir</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div>
+                <h3>Mis Rutas</h3>
+                <button class="btn-primary" style="padding: 10px; font-size: 0.9rem;" onclick="activarModoCreacion()">+
+                    Crear Nueva Ruta</button>
+                <div id="lista-rutas" style="margin-top: 15px;">
+                    <p style="text-align:center; color:#888;">Cargando...</p>
+                </div>
+            </div>
+            <div>
+                <h3>Rutas Recomendadas</h3>
+                <div id="predefinidas"></div>
+            </div>
+        </aside>
+
+        <div id="map"></div>
+
+        <!-- PANEL DE DETALLES -->
+        <div id="route-details-panel">
+            <span class="close-panel" onclick="cerrarDetalles()">&times;</span>
+            <h3 id="panel-title">Nombre de la Ruta</h3>
+            <p id="panel-desc" style="color: #aaa; margin-top: -10px; margin-bottom: 20px;"></p>
+
+            <div class="detail-section">
+                <h5>📊 Estadísticas</h5>
+                <p id="panel-stats" style="font-size: 0.9rem;"></p>
+            </div>
+
+
+            <div class="detail-section">
+                <h5>⭐ Valorar Ruta</h5>
+                <div class="star-rating" id="star-rating-ui">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                <p id="avg-rating-text" style="font-size: 0.8rem; color: #aaa; margin-top: 5px;"></p>
+            </div>
+
+            <div class="detail-section" style="border-bottom: none;">
+                <h5>💬 Muro Social</h5>
+                <div class="comments-list" id="comments-container"></div>
+
+                <div class="comment-form">
+                    <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"></textarea>
+                    <input type="file" id="comment-file" accept="image/*">
+                    <button class="btn-primary" style="padding: 10px;" onclick="subirComentario()">Publicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SEGURIDAD ---
+        const userString = localStorage.getItem('user');
+        if (!userString) { alert("⚠️ Debes iniciar sesión"); window.location.href = 'index.html'; }
+        const userObj = JSON.parse(userString);
+        const currentUserId = userObj.user ? userObj.user.id : userObj.id;
+
+        function logout() { localStorage.removeItem('user'); window.location.href = 'index.html'; }
+
+        // --- 2. MAPA ---
+        const map = L.map('map').setView([40.416, -3.703], 6);
+        L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=YOUR_THUNDERFOREST_API_KEY', {
+            attribution: '© OpenStreetMap | Thunderforest'
+        }).addTo(map);
+        // Fallback si no hay API key de Thunderforest
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        let currentRouteId = null;
+        let routeStartCoords = null;
+
+        // --- 3. CREACIÓN DE RUTA ---
+        let modoCreacion = false;
+        let puntoInicio = null;
+        let marcadorInicio = null;
+
+        function activarModoCreacion() {
+            modoCreacion = true; puntoInicio = null;
+            if (marcadorInicio) map.removeLayer(marcadorInicio);
+            document.getElementById('map').style.cursor = 'crosshair';
+            alert("1️⃣ Clic en SALIDA");
+        }
+
+        map.on('click', async function (e) {
+            if (!modoCreacion) return;
+            if (!puntoInicio) {
+                puntoInicio = e.latlng;
+                marcadorInicio = L.marker(puntoInicio).addTo(map).bindPopup("🚩 Salida").openPopup();
+                alert("2️⃣ Clic en LLEGADA");
+                return;
+            }
+
+            const puntoFinal = e.latlng;
+            document.getElementById('map').style.cursor = 'wait';
+
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${puntoInicio.lng},${puntoInicio.lat};${puntoFinal.lng},${puntoFinal.lat}?overview=full&geometries=geojson`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const coords = L.geoJSON(route.geometry).getLayers()[0].getLatLngs();
+
+                    const titulo = prompt("Nombre de la ruta:");
+                    if (!titulo) { reiniciarCreacion(); return; }
+                    const desc = prompt("Descripción:");
+
+                    // ENVIAR AL BACKEND CON DISTANCIA Y DURACIÓN
+                    const resSave = await fetch('http://localhost:3000/api/rutas/guardar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            titulo, descripcion: desc, coordenadas: coords,
+                            usuario_id: currentUserId,
+                            distancia: (data.routes[0].distance / 1000).toFixed(2), // Km
+                            duracion: Math.round(data.routes[0].duration / 60) // Minutos
+                        })
+                    });
+
+                    if (resSave.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
+                } else { alert("Ruta no encontrada"); }
+            } catch (e) { alert("Error OSRM"); }
+            finally { reiniciarCreacion(); }
+        });
+
+        function reiniciarCreacion() {
+            modoCreacion = false; puntoInicio = null;
+            if (marcadorInicio) map.removeLayer(marcadorInicio);
+            document.getElementById('map').style.cursor = '';
+        }
+
+        // --- 4. LISTADO Y DETALLES ---
+        async function cargarMisRutas() {
+            const contenedor = document.getElementById('lista-rutas');
+            try {
+                const res = await fetch(`http://localhost:3000/api/rutas/${currentUserId}`);
+                const rutas = await res.json();
+                contenedor.innerHTML = '';
+
+                rutas.forEach(ruta => {
+                    const item = document.createElement('div');
+                    item.className = 'db-route-item';
+                    const stars = "⭐".repeat(Math.round(ruta.avg_rating || 0)) || "Sin votos";
+                    item.innerHTML = `
+                        <h4>${ruta.title}</h4>
+                        <div class="stats">
+                            <span>🏁 ${ruta.distance} Km</span>
+                            <span>⏱️ ${ruta.duration} min</span>
+                        </div>
+                        <div class="rating">${stars} (${ruta.comment_count} 💬)</div>
+                    `;
+                    item.onclick = () => mostrarDetallesRuta(ruta);
+                    contenedor.appendChild(item);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function mostrarDetallesRuta(ruta) {
+            currentRouteId = ruta.id;
+            const coords = JSON.parse(ruta.coordinates);
+            routeStartCoords = Array.isArray(coords[0]) ? coords[0] : coords; // [lat, lng] o {lat, lng}
+
+            // UI del panel
+            document.getElementById('panel-title').innerText = ruta.title;
+            document.getElementById('panel-desc').innerText = ruta.description || 'Sin descripción';
+            document.getElementById('panel-stats').innerHTML = `Distancia: <b>${ruta.distance} Km</b><br>Tiempo estimado: <b>${ruta.duration} min</b>`;
+
+            document.getElementById('route-details-panel').classList.add('active');
+
+            // Dibujar en mapa y zoom
+            const poly = L.polyline(coords, { color: '#64b5f6', weight: 5 }).addTo(map);
+            map.fitBounds(poly.getBounds());
+
+            // 1. Cargar Comentarios
+            cargarComentarios(ruta.id);
+            // 2. Setup Ratings
+            actualizarUIStars(ruta.avg_rating);
+        }
+
+        function cerrarDetalles() {
+            document.getElementById('route-details-panel').classList.remove('active');
+            currentRouteId = null;
+        }
+
+
+        // --- 6. FUNCIONALIDAD VALORACIÓN ---
+        const stars = document.querySelectorAll('#star-rating-ui .star');
+        stars.forEach(star => {
+            star.onclick = async () => {
+                const val = star.getAttribute('data-value');
+                try {
+                    const res = await fetch(`http://localhost:3000/api/rutas/${currentRouteId}/valorar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: currentUserId, rating: val })
+                    });
+                    const data = await res.json();
+                    actualizarUIStars(data.media);
+                    cargarMisRutas(); // Refrescar lista
+                } catch (e) { alert("Error al valorar"); }
+            };
+        });
+
+        function actualizarUIStars(media) {
+            const rounded = Math.round(media || 0);
+            stars.forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= rounded);
+            });
+            document.getElementById('avg-rating-text').innerText = media ? `Media: ${parseFloat(media).toFixed(1)} / 5` : 'Aún no valorada';
+        }
+
+        // --- 7. FUNCIONALIDAD MURO SOCIAL ---
+        async function cargarComentarios(routeId) {
+            const container = document.getElementById('comments-container');
+            container.innerHTML = 'Cargando comentarios...';
+            try {
+                const res = await fetch(`http://localhost:3000/api/rutas/${routeId}/comentarios`);
+                const comentarios = await res.json();
+                container.innerHTML = '';
+
+                if (comentarios.length === 0) container.innerHTML = '<p style="font-size:0.8rem; color:#666;">Sin comentarios. ¡Sé el primero!</p>';
+
+                comentarios.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'comment-item';
+
+                    // Si la foto es una ruta local (backend), le ponemos el prefijo del servidor
+                    let finalPhotoUrl = c.photo_url;
+                    if (finalPhotoUrl && !finalPhotoUrl.startsWith('http')) {
+                        finalPhotoUrl = `http://localhost:3000${finalPhotoUrl}`;
+                    }
+
+                    div.innerHTML = `
+                        <span class="user">@${c.username}</span>
+                        <div>${c.comment}</div>
+                        ${finalPhotoUrl ? `<img src="${finalPhotoUrl}" class="comment-photo" onclick="window.open(this.src)">` : ''}
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) { container.innerHTML = 'Error'; }
+        }
+
+        async function subirComentario() {
+            const text = document.getElementById('comment-text').value;
+            const fileInput = document.getElementById('comment-file');
+
+            if (!text) return alert("Escribe un comentario");
+
+            // FormData para enviar archivos
+            const formData = new FormData();
+            formData.append('user_id', currentUserId);
+            formData.append('comentario', text);
+            if (fileInput.files[0]) {
+                formData.append('foto', fileInput.files[0]);
+            }
+
+            try {
+                const res = await fetch(`http://localhost:3000/api/rutas/${currentRouteId}/comentarios`, {
+                    method: 'POST',
+                    body: formData // Importante: Sin Content-Type header (el navegador lo pone)
+                });
+                if (res.ok) {
+                    document.getElementById('comment-text').value = '';
+                    fileInput.value = '';
+                    cargarComentarios(currentRouteId);
+                    cargarMisRutas(); // Refrescar conteo en lista
+                }
+            } catch (e) { alert("Error al publicar"); }
+        }
+
+        cargarMisRutas();
+    </script>
+</body>
+
+</html>

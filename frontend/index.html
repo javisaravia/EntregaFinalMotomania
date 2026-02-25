@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bienvenido - MotoManía</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* Estilos específicos para index.html si es necesario, o dejar vacío */
+  </style>
+</head>
+
+<body>
+
+  <div class="flex-center">
+    <div class="card" style="max-width: 380px; width: 100%;">
+      <img src="motomaniafoto.png" alt="Logo MotoManía" class="logo-centered"
+        style="display: block; margin: 0 auto 20px;">
+
+      <h2 style="text-align: center; margin-bottom: 30px;">Bienvenido a Motomania</h2>
+
+      <input id="email" type="email" class="dark-input" placeholder="Correo electrónico">
+      <input id="password" type="password" class="dark-input" placeholder="Contraseña">
+
+      <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
+      <button id="goRegisterBtn" type="button" class="btn-secondary" style="margin-top: 15px;">Crear una cuenta
+        nueva</button>
+
+      <p id="message"></p>
+    </div>
+  </div>
+
+
+  <script>
+    // Lógica original de JavaScript (Intacta)
+    const loginBtn = document.getElementById("loginBtn");
+    const goRegisterBtn = document.getElementById("goRegisterBtn");
+    const message = document.getElementById("message");
+
+    loginBtn.addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      message.textContent = "";
+      message.style.color = "#ef4444"; // Rojo de error
+
+      if (!email || !password) {
+        message.textContent = "⚠️ Rellena todos los campos";
+        return;
+      }
+
+      try {
+        const res = await axios.post("http://localhost:3000/api/auth/login", {
+          email,
+          password
+        });
+
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+
+        message.style.color = "#10b981"; // Verde de éxito
+        message.textContent = " Redirigiendo...";
+
+        setTimeout(() => {
+          window.location.href = "routes.html";
+        }, 1500);
+
+      } catch (err) {
+        message.textContent =
+          err.response?.data?.message || "❌ Email o contraseña incorrectos";
+      }
+    });
+
+    goRegisterBtn.addEventListener("click", () => {
+      window.location.href = "register.html";
+    });
+  </script>
+
+</body>
+
+</html>

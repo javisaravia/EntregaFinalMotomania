@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clubes - Motomanía</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA CLUBES */
+        body {
+            padding: 0;
+            background-color: var(--bg-primary);
+        }
+
+        .main-content {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--accent-primary);
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .club-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .club-card h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-weight: 800;
+        }
+
+        .club-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-back-link {
+            text-decoration: none;
+            background: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .btn-back-link:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .badge-member {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            text-align: center;
+            font-weight: 700;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header-app">
+        <h1>🧥 Zona de Clubes</h1>
+        <a href="routes.html" class="btn-back-link">⬅ Volver al Mapa</a>
+    </header>
+
+    <div class="main-content">
+        <h2>✅ Mis Clubes</h2>
+        <div id="mis-clubes-container" class="grid">
+            <p style="color:var(--text-secondary)">Cargando...</p>
+        </div>
+
+        <h2>🌎 Explorar nuevos clubes</h2>
+        <div id="todos-clubes-container" class="grid">
+            <p style="color:var(--text-secondary)">Cargando...</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. VERIFICAR LOGIN
+        const userString = localStorage.getItem('user');
+        if (!userString) {
+            alert("Debes iniciar sesión");
+            window.location.href = 'index.html';
+        }
+        const userObj = JSON.parse(userString);
+        const currentUserId = userObj.user ? userObj.user.id : userObj.id;
+
+        // Variable para guardar los IDs de los clubes donde ya estoy
+        let misClubesIds = [];
+
+        // 2. FUNCIÓN PRINCIPAL (Controlador de flujo)
+        async function iniciarPagina() {
+            await cargarMisClubes();       // Primero cargamos los míos
+            await cargarTodosLosClubes();  // Luego cargamos el resto (filtrando)
+        }
+
+        // A. CARGAR MIS CLUBES
+        async function cargarMisClubes() {
+            try {
+                const res = await fetch(`http://localhost:3000/api/clubs/mis-clubes/${currentUserId}`);
+                const misClubes = await res.json();
+
+                const contenedor = document.getElementById('mis-clubes-container');
+                contenedor.innerHTML = ''; // Limpiar mensaje de carga
+
+                if (misClubes.length === 0) {
+                    contenedor.innerHTML = '<p style="color:#777">Aún no te has unido a ningún club.</p>';
+                    return;
+                }
+
+                misClubes.forEach(club => {
+                    misClubesIds.push(club.id); // Guardamos ID para filtrar luego
+
+                    contenedor.innerHTML += `
+                        <div class="card club-card">
+                            <div>
+                                <h3>${club.name}</h3>
+                                <p>${club.description}</p>
+                            </div>
+                            <div class="badge-member">✓ Eres Miembro</div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Error mis clubes:", error);
+            }
+        }
+
+        // B. CARGAR RESTO DE CLUBES
+        async function cargarTodosLosClubes() {
+            try {
+                const res = await fetch('http://localhost:3000/api/clubs');
+                const todos = await res.json();
+
+                const contenedor = document.getElementById('todos-clubes-container');
+                contenedor.innerHTML = '';
+
+                let hayDisponibles = false;
+
+                todos.forEach(club => {
+                    // FILTRO MÁGICO: Si el ID ya está en "misClubesIds", NO lo pintamos aquí
+                    if (misClubesIds.includes(club.id)) return;
+
+                    hayDisponibles = true;
+                    contenedor.innerHTML += `
+                        <div class="card club-card">
+                            <div>
+                                <h3>${club.name}</h3>
+                                <p>${club.description}</p>
+                            </div>
+                            <button class="btn-primary" onclick="unirse(${club.id}, '${club.name}')">
+                                Unirse al Club
+                            </button>
+                        </div>
+                    `;
+                });
+
+                if (!hayDisponibles) {
+                    contenedor.innerHTML = '<p style="color:#777">¡Ya estás unido a todos los clubes disponibles! 🏆</p>';
+                }
+
+            } catch (error) {
+                console.error("Error todos clubes:", error);
+            }
+        }
+
+        // C. FUNCIÓN UNIRSE
+        async function unirse(clubId, clubName) {
+            if (!confirm(`¿Quieres unirte a "${clubName}"?`)) return;
+
+            try {
+                const res = await fetch('http://localhost:3000/api/clubs/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUserId, clubId })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("🎉 ¡Te has unido con éxito!");
+                    // Reiniciamos las listas para que se actualice visualmente
+                    misClubesIds = [];
+                    iniciarPagina();
+                } else {
+                    alert("⚠️ " + data.error);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error de conexión");
+            }
+        }
+
+        // Arrancamos todo
+        iniciarPagina();
+    </script>
+</body>
+
+</html>
