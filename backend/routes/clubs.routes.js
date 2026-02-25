@@ -20,8 +20,8 @@ router.get('/mis-clubes/:userId', async (req, res) => {
         // SQL: Unimos la tabla 'clubs' con 'user_clubs' para sacar solo los míos
         const sql = `
             SELECT c.* FROM clubs c
-            JOIN user_clubs uc ON c.id = uc.club_id
-            WHERE uc.user_id = ?
+            JOIN club_members cm ON c.id = cm.club_id
+            WHERE cm.user_id = ?
         `;
         const [misClubes] = await db.query(sql, [userId]);
         res.json(misClubes);
@@ -43,7 +43,7 @@ router.post('/join', async (req, res) => {
     try {
         // A. Comprobar si ya existe la unión
         const [existe] = await db.query(
-            'SELECT * FROM user_clubs WHERE user_id = ? AND club_id = ?', 
+            'SELECT * FROM club_members WHERE user_id = ? AND club_id = ?', 
             [userId, clubId]
         );
 
@@ -52,7 +52,7 @@ router.post('/join', async (req, res) => {
         }
 
         // B. Insertar
-        await db.query('INSERT INTO user_clubs (user_id, club_id) VALUES (?, ?)', [userId, clubId]);
+        await db.query('INSERT INTO club_members (user_id, club_id) VALUES (?, ?)', [userId, clubId]);
         
         res.json({ message: "¡Unión exitosa!" });
 

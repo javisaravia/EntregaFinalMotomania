@@ -42,21 +42,15 @@ router.post('/guardar', async (req, res) => {
     }
 });
 
-// --- FUNCIONALIDAD 1: COMENTARIOS (Con soporte para Multiparte/Archivo) ---
-router.post('/comentar', upload.single('foto'), async (req, res) => {
+// --- FUNCIONALIDAD 1: COMENTARIOS ---
+router.post('/comentar', async (req, res) => {
     const { route_id, user_id, comment } = req.body;
-    let photo_url = null;
-
-    if (req.file) {
-        photo_url = `/uploads/${req.file.filename}`;
-    }
-
     try {
-        await db.query('INSERT INTO route_comments (route_id, user_id, comment, photo_url) VALUES (?, ?, ?, ?)',
-            [route_id, user_id, comment, photo_url]);
+        await db.query('INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)',
+            [route_id, user_id, comment]);
         res.json({ msg: "Comentario añadido" });
     } catch (error) {
-        console.error("Error Social Wall:", error);
+        console.error("Error al añadir comentario:", error.message);
         res.status(500).json({ error: "Error al añadir comentario" });
     }
 });
@@ -106,6 +100,7 @@ router.post('/valorar', async (req, res) => {
         const [result] = await db.query('SELECT AVG(rating) as media FROM route_ratings WHERE route_id = ?', [route_id]);
         res.json({ msg: "Valoración guardada", media: result[0].media || 0 });
     } catch (error) {
+        console.error("Error al valorar:", error.message);
         res.status(500).json({ error: "Error al valorar" });
     }
 });

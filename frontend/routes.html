@@ -367,9 +367,13 @@
         });
 
         cargarMisRutas();
-        // Añade esto al final de tu <script type="module">
+        // EXPORTACIÓN GLOBAL PARA VERCEL/BOTONES
         window.activarModoCreacion = manualInitCreation;
-        window.logout = logout;
+        window.logout = function () {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        };
         window.subirComentario = manualSubmitComment;
         window.enviarValoracion = manualSubmitRating;
         window.mostrarDetallesRuta = mostrarDetallesRuta;
