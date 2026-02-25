@@ -223,11 +223,16 @@
         window.subirComentario = function () {
             if (window.manualSubmitComment) window.manualSubmitComment();
         };
+        window.enviarValoracion = function (rating) {
+            if (window.manualSubmitRating) window.manualSubmitRating(rating);
+        };
 
     </script>
 
     <script type="module">
-        const BASE_URL = 'https://entregafinalmotomania.onrender.com';
+        const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000'
+            : 'https://entregafinalmotomania.onrender.com';
 
         // SEGURIDAD: Obtener userId del localStorage
         let currentUserId = null;
@@ -310,6 +315,10 @@
             const poly = L.polyline(coords, { color: 'red', weight: 5 }).addTo(map);
             map.fitBounds(poly.getBounds());
             cargarComentarios(r.id);
+            document.querySelectorAll('.star').forEach(s => {
+                s.classList.remove('active');
+                if (parseInt(s.dataset.value) <= Math.round(r.avg_rating || 0)) s.classList.add('active');
+            });
         };
 
         async function cargarComentarios(id) {
@@ -326,20 +335,43 @@
             const t = document.getElementById('comment-text').value;
             if (!t) return;
             try {
-                const res = await fetch(`${BASE_URL}/api/routes/${currentRouteId}/comentarios`, {
+                const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId, comment: t })
+                    body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, comment: t })
                 });
                 if (res.ok) { document.getElementById('comment-text').value = ''; cargarComentarios(currentRouteId); }
             } catch (e) { }
         };
+
+        window.manualSubmitRating = async (rating) => {
+            try {
+                const res = await fetch(`${BASE_URL}/api/routes/valorar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, rating: rating })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('avg-rating-text').innerText = `Media: ${data.media.toFixed(1)} ★`;
+                    document.querySelectorAll('.star').forEach(s => {
+                        s.classList.remove('active');
+                        if (parseInt(s.dataset.value) <= rating) s.classList.add('active');
+                    });
+                }
+            } catch (e) { }
+        };
+
+        document.querySelectorAll('.star').forEach(star => {
+            star.onclick = () => window.enviarValoracion(parseInt(star.dataset.value));
+        });
 
         cargarMisRutas();
         // Añade esto al final de tu <script type="module">
         window.activarModoCreacion = manualInitCreation;
         window.logout = logout;
         window.subirComentario = manualSubmitComment;
+        window.enviarValoracion = manualSubmitRating;
         window.mostrarDetallesRuta = mostrarDetallesRuta;
         window.cerrarDetalles = cerrarDetalles;
     </script>

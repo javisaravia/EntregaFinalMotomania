@@ -58,6 +58,33 @@ router.post('/guardar', async (req, res) => {
     }
 });
 
+// --- FUNCIONALIDAD: COMENTARIOS ---
+router.post('/comentar', async (req, res) => {
+    const { route_id, user_id, comment } = req.body;
+    try {
+        await db.query('INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)',
+            [route_id, user_id, comment]);
+        res.json({ msg: "Comentario añadido" });
+    } catch (error) {
+        res.status(500).json({ error: "Error al añadir comentario" });
+    }
+});
+
+// --- FUNCIONALIDAD: VALORACIONES ---
+router.post('/valorar', async (req, res) => {
+    const { route_id, user_id, rating } = req.body;
+    try {
+        await db.query(
+            'INSERT INTO route_ratings (route_id, user_id, rating) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE rating = ?',
+            [route_id, user_id, rating, rating]
+        );
+        const [result] = await db.query('SELECT AVG(rating) as media FROM route_ratings WHERE route_id = ?', [route_id]);
+        res.json({ msg: "Valoración guardada", media: result[0].media || 0 });
+    } catch (error) {
+        res.status(500).json({ error: "Error al valorar" });
+    }
+});
+
 // RUTA PARA LEER RUTAS DE UN USUARIO (GET /api/routes/:usuario_id)
 router.get('/:usuario_id', async (req, res) => {
     try {
@@ -66,8 +93,8 @@ router.get('/:usuario_id', async (req, res) => {
             (SELECT AVG(rating) FROM route_ratings WHERE route_id = r.id) as avg_rating,
             (SELECT COUNT(*) FROM route_comments WHERE route_id = r.id) as comment_count
             FROM routes r WHERE r.user_id = ?`;
-        const [rutas] = await db.query(sql, [req.params.usuario_id]);
-        res.json(rutas);
+        const [routes] = await db.query(sql, [req.params.usuario_id]);
+        res.json(routes);
     } catch (error) {
         res.status(500).json({ error: "Error al leer rutas", detalles: error.message });
     }
