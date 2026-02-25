@@ -13,9 +13,7 @@ app.use(cors({
     origin: [
         'http://127.0.0.1:5500', 
         'http://localhost:5500', 
-        'https://motomania-frontend.vercel.app',
-        'https://entrega-final-motomania.vercel.app',
-        'https://entregafinalmotomania.vercel.app'
+        'https://appmotomania.vercel.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
