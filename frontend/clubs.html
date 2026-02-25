@@ -109,6 +109,7 @@
     </div>
 
     <script type="module">
+        import { API_BASE_URL } from './js/config.js';
         // 1. VERIFICAR LOGIN
         let currentUserId = null;
         try {
@@ -138,7 +139,7 @@
         // A. CARGAR MIS CLUBES
         async function cargarMisClubes() {
             try {
-                const res = await fetch(`http://localhost:3000/api/clubs/mis-clubes/${currentUserId}`);
+                const res = await fetch(`${API_BASE_URL}/api/clubs/mis-clubes/${currentUserId}`);
                 const misClubes = await res.json();
 
                 const contenedor = document.getElementById('mis-clubes-container');
@@ -171,7 +172,7 @@
         // B. CARGAR RESTO DE CLUBES
         async function cargarTodosLosClubes() {
             try {
-                const res = await fetch('http://localhost:3000/api/clubs');
+                const res = await fetch(`${API_BASE_URL}/api/clubs`);
                 const todos = await res.json();
 
                 const contenedor = document.getElementById('todos-clubes-container');
@@ -208,14 +209,11 @@
 
         // C. FUNCIÓN UNIRSE
         async function unirse(clubId, clubName) {
-            // Reemplazo confirm() con un custom confirm si fuera necesario, 
-            // pero el usuario solo pidió reemplazar alert(). Mantengo confirm() por ahora
-            // o lo hago manual si prefieres. Seguiré con el plan de Toasts.
             if (!confirm(`¿Quieres unirte a "${clubName}"?`)) return;
 
             toggleSpinner(true);
             try {
-                const res = await fetch('http://localhost:3000/api/clubs/join', {
+                const res = await fetch(`${API_BASE_URL}/api/clubs/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: currentUserId, clubId })
@@ -225,7 +223,6 @@
 
                 if (res.ok) {
                     mostrarToast("🎉 ¡Te has unido con éxito!", "success");
-                    // Reiniciamos las listas para que se actualice visualmente
                     misClubesIds = [];
                     iniciarPagina();
                 } else {

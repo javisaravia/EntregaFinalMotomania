@@ -33,6 +33,7 @@
 
 
   <script type="module">
+    import { API_BASE_URL } from './js/config.js';
     const loginBtn = document.getElementById("loginBtn");
     const goRegisterBtn = document.getElementById("goRegisterBtn");
 
@@ -52,7 +53,7 @@
       toggleSpinner(true);
 
       try {
-        const res = await axios.post("http://localhost:3000/api/auth/login", {
+        const res = await axios.post(`${API_BASE_URL}/api/auth/login`, {
           email,
           password
         });

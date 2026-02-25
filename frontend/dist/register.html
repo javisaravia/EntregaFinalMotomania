@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Registro MotoManía</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="js/utils.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/styles-C_0tyGmS.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/register-CEhmMTla.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/config-B_CD02Rf.js">
+  <link rel="stylesheet" crossorigin href="/assets/config-C_0tyGmS.css">
 </head>
 
 <body>
@@ -28,59 +29,7 @@
                 tienes cuenta? Ingresa</button>
         </div>
     </div>
-
-    <script>
-        document.getElementById('registerBtn').addEventListener('click', registrarUsuario);
-
-        async function registrarUsuario() {
-            const username = document.getElementById('username').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            // ✅ Validaciones básicas
-            if (!username || !email || !password) {
-                mostrarToast("Rellena todos los campos.", "error");
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                mostrarToast("Las contraseñas no coinciden.", "error");
-                return;
-            }
-
-            toggleSpinner(true);
-
-            try {
-                const respuesta = await fetch('http://localhost:3000/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: username,
-                        email: email,
-                        password: password
-                    })
-                });
-
-                const datos = await respuesta.json();
-
-                if (respuesta.ok) {
-                    mostrarToast("Usuario creado correctamente.", "success");
-
-                    setTimeout(() => {
-                        window.location.href = 'index.html'; // login
-                    }, 1500);
-                } else {
-                    mostrarToast(datos.error || "No se pudo registrar.", "error");
-                }
-
-            } catch (error) {
-                mostrarToast("Error de conexión con el servidor.", "error");
-            } finally {
-                toggleSpinner(false);
-            }
-        }
-    </script>
+
 
 </body>
 

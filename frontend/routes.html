@@ -277,6 +277,7 @@
     </div>
 
     <script type="module">
+        import { API_BASE_URL } from './js/config.js';
         // --- 1. SEGURIDAD ---
         let currentUserId = null;
         try {
@@ -352,7 +353,7 @@
                     if (!titulo) { reiniciarCreacion(); return; }
                     const desc = prompt("Descripción:");
 
-                    const resSave = await fetch('http://localhost:3000/api/rutas/guardar', {
+                    const resSave = await fetch(`${API_BASE_URL}/api/rutas/guardar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -389,7 +390,7 @@
         async function cargarMisRutas() {
             const contenedor = document.getElementById('lista-rutas');
             try {
-                const res = await fetch(`http://localhost:3000/api/rutas/${currentUserId}`);
+                const res = await fetch(`${API_BASE_URL}/api/rutas/${currentUserId}`);
                 const rutas = await res.json();
                 contenedor.innerHTML = '';
 
@@ -446,7 +447,7 @@
                 const val = star.getAttribute('data-value');
                 toggleSpinner(true);
                 try {
-                    const res = await fetch(`http://localhost:3000/api/rutas/${currentRouteId}/valorar`, {
+                    const res = await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/valorar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ user_id: currentUserId, rating: val })
@@ -479,7 +480,7 @@
             const container = document.getElementById('comments-container');
             container.innerHTML = 'Cargando comentarios...';
             try {
-                const res = await fetch(`http://localhost:3000/api/rutas/${routeId}/comentarios`);
+                const res = await fetch(`${API_BASE_URL}/api/rutas/${routeId}/comentarios`);
                 const comentarios = await res.json();
                 container.innerHTML = '';
 
@@ -490,7 +491,7 @@
                     div.className = 'comment-item';
                     let finalPhotoUrl = c.photo_url;
                     if (finalPhotoUrl && !finalPhotoUrl.startsWith('http')) {
-                        finalPhotoUrl = `http://localhost:3000${finalPhotoUrl}`;
+                        finalPhotoUrl = `${API_BASE_URL}${finalPhotoUrl}`;
                     }
                     div.innerHTML = `
                         <span class="user">@${c.username}</span>
@@ -519,7 +520,7 @@
             }
 
             try {
-                const res = await fetch(`http://localhost:3000/api/rutas/${currentRouteId}/comentarios`, {
+                const res = await fetch(`${API_BASE_URL}/api/rutas/${currentRouteId}/comentarios`, {
                     method: 'POST',
                     body: formData
                 });

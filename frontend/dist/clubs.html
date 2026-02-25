@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clubes - Motomanía</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="js/utils.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         /* ESTILOS ESPECÍFICOS PARA CLUBES */
         body {
@@ -86,7 +85,9 @@
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
     </style>
-  <link rel="stylesheet" crossorigin href="/assets/styles-C_0tyGmS.css">
+  <script type="module" crossorigin src="/assets/clubs-CWMUwnVY.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/config-B_CD02Rf.js">
+  <link rel="stylesheet" crossorigin href="/assets/config-C_0tyGmS.css">
 </head>
 
 <body>
@@ -107,140 +108,7 @@
             <p style="color:var(--text-secondary)">Cargando...</p>
         </div>
     </div>
-
-    <script>
-        // 1. VERIFICAR LOGIN
-        let currentUserId = null;
-        try {
-            const userString = localStorage.getItem('user');
-            if (!userString) throw new Error("No hay sesión");
-            const userObj = JSON.parse(userString);
-            currentUserId = userObj.user ? userObj.user.id : userObj.id;
-        } catch (e) {
-            window.location.href = 'index.html';
-            throw new Error("Redirecting to login...");
-        }
-
-        // Variable para guardar los IDs de los clubes donde ya estoy
-        let misClubesIds = [];
-
-        // 2. FUNCIÓN PRINCIPAL (Controlador de flujo)
-        async function iniciarPagina() {
-            toggleSpinner(true);
-            try {
-                await cargarMisClubes();       // Primero cargamos los míos
-                await cargarTodosLosClubes();  // Luego cargamos el resto (filtrando)
-            } finally {
-                toggleSpinner(false);
-            }
-        }
-
-        // A. CARGAR MIS CLUBES
-        async function cargarMisClubes() {
-            try {
-                const res = await fetch(`http://localhost:3000/api/clubs/mis-clubes/${currentUserId}`);
-                const misClubes = await res.json();
-
-                const contenedor = document.getElementById('mis-clubes-container');
-                contenedor.innerHTML = ''; // Limpiar mensaje de carga
-
-                if (misClubes.length === 0) {
-                    contenedor.innerHTML = '<p style="color:#777">Aún no te has unido a ningún club.</p>';
-                    return;
-                }
-
-                misClubes.forEach(club => {
-                    misClubesIds.push(club.id); // Guardamos ID para filtrar luego
-
-                    contenedor.innerHTML += `
-                        <div class="card club-card">
-                            <div>
-                                <h3>${club.name}</h3>
-                                <p>${club.description}</p>
-                            </div>
-                            <div class="badge-member">✓ Eres Miembro</div>
-                        </div>
-                    `;
-                });
-
-            } catch (error) {
-                mostrarToast("Error al cargar mis clubes", "error");
-            }
-        }
-
-        // B. CARGAR RESTO DE CLUBES
-        async function cargarTodosLosClubes() {
-            try {
-                const res = await fetch('http://localhost:3000/api/clubs');
-                const todos = await res.json();
-
-                const contenedor = document.getElementById('todos-clubes-container');
-                contenedor.innerHTML = '';
-
-                let hayDisponibles = false;
-
-                todos.forEach(club => {
-                    // FILTRO MÁGICO: Si el ID ya está en "misClubesIds", NO lo pintamos aquí
-                    if (misClubesIds.includes(club.id)) return;
-
-                    hayDisponibles = true;
-                    contenedor.innerHTML += `
-                        <div class="card club-card">
-                            <div>
-                                <h3>${club.name}</h3>
-                                <p>${club.description}</p>
-                            </div>
-                            <button class="btn-primary" onclick="unirse(${club.id}, '${club.name}')">
-                                Unirse al Club
-                            </button>
-                        </div>
-                    `;
-                });
-
-                if (!hayDisponibles) {
-                    contenedor.innerHTML = '<p style="color:#777">¡Ya estás unido a todos los clubes disponibles! 🏆</p>';
-                }
-
-            } catch (error) {
-                mostrarToast("Error al cargar clubes disponibles", "error");
-            }
-        }
-
-        // C. FUNCIÓN UNIRSE
-        async function unirse(clubId, clubName) {
-            // Reemplazo confirm() con un custom confirm si fuera necesario, 
-            // pero el usuario solo pidió reemplazar alert(). Mantengo confirm() por ahora
-            // o lo hago manual si prefieres. Seguiré con el plan de Toasts.
-            if (!confirm(`¿Quieres unirte a "${clubName}"?`)) return;
-
-            toggleSpinner(true);
-            try {
-                const res = await fetch('http://localhost:3000/api/clubs/join', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUserId, clubId })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    mostrarToast("🎉 ¡Te has unido con éxito!", "success");
-                    // Reiniciamos las listas para que se actualice visualmente
-                    misClubesIds = [];
-                    iniciarPagina();
-                } else {
-                    mostrarToast(data.error || "No se pudo unir al club", "error");
-                }
-            } catch (error) {
-                mostrarToast("Error de conexión", "error");
-            } finally {
-                toggleSpinner(false);
-            }
-        }
-
-        // Arrancamos todo
-        iniciarPagina();
-    </script>
+
 </body>
 
 </html>

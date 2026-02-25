@@ -30,6 +30,7 @@
     </div>
 
     <script type="module">
+        import { API_BASE_URL } from './js/config.js';
         document.getElementById('registerBtn').addEventListener('click', registrarUsuario);
 
         async function registrarUsuario() {
@@ -52,7 +53,7 @@
             toggleSpinner(true);
 
             try {
-                const respuesta = await fetch('http://localhost:3000/api/auth/register', {
+                const respuesta = await fetch(`${API_BASE_URL}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
