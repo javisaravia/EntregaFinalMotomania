@@ -1,8 +1,4 @@
 {
-<<<<<<< HEAD
-  "dependencies": {
-    "cors": "^2.8.6"
-=======
   "name": "motomania-backend",
   "version": "1.0.0",
   "description": "Backend MotoMania",
@@ -19,6 +15,5 @@
     "multer": "^2.0.2",
     "mysql2": "^3.16.2",
     "node-fetch": "^3.3.2"
->>>>>>> 3bcb065558400d570bd4e6669b06451aa19fef4d
   }
 }

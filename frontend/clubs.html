@@ -7,6 +7,7 @@
     <title>Clubes - Motomanía</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="js/utils.js"></script>
     <style>
         /* ESTILOS ESPECÍFICOS PARA CLUBES */
         body {
@@ -109,21 +110,29 @@
 
     <script>
         // 1. VERIFICAR LOGIN
-        const userString = localStorage.getItem('user');
-        if (!userString) {
-            alert("Debes iniciar sesión");
+        let currentUserId = null;
+        try {
+            const userString = localStorage.getItem('user');
+            if (!userString) throw new Error("No hay sesión");
+            const userObj = JSON.parse(userString);
+            currentUserId = userObj.user ? userObj.user.id : userObj.id;
+        } catch (e) {
             window.location.href = 'index.html';
+            throw new Error("Redirecting to login...");
         }
-        const userObj = JSON.parse(userString);
-        const currentUserId = userObj.user ? userObj.user.id : userObj.id;
 
         // Variable para guardar los IDs de los clubes donde ya estoy
         let misClubesIds = [];
 
         // 2. FUNCIÓN PRINCIPAL (Controlador de flujo)
         async function iniciarPagina() {
-            await cargarMisClubes();       // Primero cargamos los míos
-            await cargarTodosLosClubes();  // Luego cargamos el resto (filtrando)
+            toggleSpinner(true);
+            try {
+                await cargarMisClubes();       // Primero cargamos los míos
+                await cargarTodosLosClubes();  // Luego cargamos el resto (filtrando)
+            } finally {
+                toggleSpinner(false);
+            }
         }
 
         // A. CARGAR MIS CLUBES
@@ -155,7 +164,7 @@
                 });
 
             } catch (error) {
-                console.error("Error mis clubes:", error);
+                mostrarToast("Error al cargar mis clubes", "error");
             }
         }
 
@@ -193,14 +202,18 @@
                 }
 
             } catch (error) {
-                console.error("Error todos clubes:", error);
+                mostrarToast("Error al cargar clubes disponibles", "error");
             }
         }
 
         // C. FUNCIÓN UNIRSE
         async function unirse(clubId, clubName) {
+            // Reemplazo confirm() con un custom confirm si fuera necesario, 
+            // pero el usuario solo pidió reemplazar alert(). Mantengo confirm() por ahora
+            // o lo hago manual si prefieres. Seguiré con el plan de Toasts.
             if (!confirm(`¿Quieres unirte a "${clubName}"?`)) return;
 
+            toggleSpinner(true);
             try {
                 const res = await fetch('http://localhost:3000/api/clubs/join', {
                     method: 'POST',
@@ -211,16 +224,17 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert("🎉 ¡Te has unido con éxito!");
+                    mostrarToast("🎉 ¡Te has unido con éxito!", "success");
                     // Reiniciamos las listas para que se actualice visualmente
                     misClubesIds = [];
                     iniciarPagina();
                 } else {
-                    alert("⚠️ " + data.error);
+                    mostrarToast(data.error || "No se pudo unir al club", "error");
                 }
             } catch (error) {
-                console.error(error);
-                alert("Error de conexión");
+                mostrarToast("Error de conexión", "error");
+            } finally {
+                toggleSpinner(false);
             }
         }
 

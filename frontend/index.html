@@ -10,10 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
   <link rel="stylesheet" href="styles.css">
-
-  <style>
-    /* Estilos específicos para index.html si es necesario, o dejar vacío */
-  </style>
+  <script src="js/utils.js"></script>
 </head>
 
 <body>
@@ -31,29 +28,28 @@
       <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
       <button id="goRegisterBtn" type="button" class="btn-secondary" style="margin-top: 15px;">Crear una cuenta
         nueva</button>
-
-      <p id="message"></p>
     </div>
   </div>
 
 
   <script>
-    // Lógica original de JavaScript (Intacta)
     const loginBtn = document.getElementById("loginBtn");
     const goRegisterBtn = document.getElementById("goRegisterBtn");
-    const message = document.getElementById("message");
 
     loginBtn.addEventListener("click", async () => {
+      if (typeof axios === 'undefined') {
+        mostrarToast("Error: No se pudo conectar con el servidor de autenticación", "error");
+        return;
+      }
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
 
-      message.textContent = "";
-      message.style.color = "#ef4444"; // Rojo de error
-
       if (!email || !password) {
-        message.textContent = "⚠️ Rellena todos los campos";
+        mostrarToast("Rellena todos los campos", "error");
         return;
       }
+
+      toggleSpinner(true);
 
       try {
         const res = await axios.post("http://localhost:3000/api/auth/login", {
@@ -64,16 +60,17 @@
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
 
-        message.style.color = "#10b981"; // Verde de éxito
-        message.textContent = " Redirigiendo...";
+        mostrarToast("¡Bienvenido de nuevo!", "success");
 
         setTimeout(() => {
           window.location.href = "routes.html";
         }, 1500);
 
       } catch (err) {
-        message.textContent =
-          err.response?.data?.message || "❌ Email o contraseña incorrectos";
+        const msg = err.response?.data?.error || "Email o contraseña incorrectos";
+        mostrarToast(msg, "error");
+      } finally {
+        toggleSpinner(false);
       }
     });
 

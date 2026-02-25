@@ -6,6 +6,7 @@
     <title>Registro MotoManía</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="js/utils.js"></script>
 </head>
 
 <body>
@@ -25,8 +26,6 @@
             <button id="registerBtn" class="btn-primary">Registrarse</button>
             <button onclick="window.location.href='index.html'" class="btn-secondary" style="margin-top: 15px;">¿Ya
                 tienes cuenta? Ingresa</button>
-
-            <p id="message"></p>
         </div>
     </div>
 
@@ -38,20 +37,19 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            const message = document.getElementById('message');
-
-            message.style.color = "#ef4444"; // Rojo de error
 
             // ✅ Validaciones básicas
             if (!username || !email || !password) {
-                message.textContent = "❌ Rellena todos los campos.";
+                mostrarToast("Rellena todos los campos.", "error");
                 return;
             }
 
             if (password !== confirmPassword) {
-                message.textContent = "❌ Las contraseñas no coinciden.";
+                mostrarToast("Las contraseñas no coinciden.", "error");
                 return;
             }
+
+            toggleSpinner(true);
 
             try {
                 const respuesta = await fetch('http://localhost:3000/api/auth/register', {
@@ -67,19 +65,19 @@
                 const datos = await respuesta.json();
 
                 if (respuesta.ok) {
-                    message.style.color = "#10b981"; // Verde de éxito
-                    message.textContent = "✅ Usuario creado correctamente. Redirigiendo...";
+                    mostrarToast("Usuario creado correctamente.", "success");
 
                     setTimeout(() => {
                         window.location.href = 'index.html'; // login
                     }, 1500);
                 } else {
-                    message.textContent = "❌ " + (datos.error || "No se pudo registrar.");
+                    mostrarToast(datos.error || "No se pudo registrar.", "error");
                 }
 
             } catch (error) {
-                console.error(error);
-                message.textContent = "❌ Error de conexión con el servidor.";
+                mostrarToast("Error de conexión con el servidor.", "error");
+            } finally {
+                toggleSpinner(false);
             }
         }
     </script>
