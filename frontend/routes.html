@@ -200,8 +200,8 @@
             <div class="comment-form" style="margin-top:20px;">
                 <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"
                     style="width:100%; background:#0f172a; border:1px solid #334155; color:white; padding:10px; border-radius:8px;"></textarea>
-                <input type="file" id="comment-file" accept="image/*" style="margin:10px 0;">
-                <button class="btn-primary" onclick="window.subirComentario()">Publicar</button>
+                <button class="btn-primary" onclick="window.subirComentario()"
+                    style="margin-top:10px;">Publicar</button>
             </div>
         </div>
     </div>
@@ -322,40 +322,52 @@
         };
 
         async function cargarComentarios(id) {
+            if (!id) return;
             const c = document.getElementById('comments-container');
-            // NO ponemos "Cargando..." aquí para evitar saltos bruscos si el usuario prefiere limpieza
-            // c.innerHTML = "Cargando..."; 
+            c.innerHTML = ''; // Limpiamos antes de cargar para quitar cualquier rastro de "Cargando..."
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/${id}/comentarios`);
                 const cms = await res.json();
                 if (cms.length === 0) {
-                    c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún.</p>';
+                    c.innerHTML = '<p style="color:#777; font-size:0.8rem;">Sin comentarios aún. ¡Sé el primero!</p>';
                 } else {
-                    c.innerHTML = cms.map(cm => `<div style="padding:8px; border-bottom:1px solid #334155; font-size:0.85rem; color:#f1f5f9;"><b>@${cm.username}:</b> ${cm.comment}</div>`).join('');
+                    c.innerHTML = cms.map(cm => `
+                        <div style="padding:10px; border-bottom:1px solid #334155; font-size:0.85rem; color:#f1f5f9;">
+                            <b style="color:var(--accent-primary)">@${cm.username}:</b> ${cm.comment}
+                        </div>
+                    `).join('');
                 }
             } catch (e) {
-                console.error("Error cargando comentarios:", e);
-                c.innerHTML = "";
+                console.error("Error al cargar comentarios:", e);
             }
         }
 
         window.manualSubmitComment = async () => {
             const t = document.getElementById('comment-text').value;
-            if (!t) return;
+            // Obtenemos ID de la ruta: prioridad variable global, luego URL param
+            const urlParams = new URLSearchParams(window.location.search);
+            const routeId = currentRouteId || urlParams.get('route_id');
+
+            if (!t) return alert("Escribe algo antes de publicar.");
+            if (!routeId) return alert("Error: No se ha detectado la ruta seleccionada.");
+
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ route_id: currentRouteId, user_id: currentUserId, comment: t })
+                    body: JSON.stringify({ route_id: routeId, user_id: currentUserId, comment: t })
                 });
                 if (res.ok) {
                     alert('¡Gracias por publicar tu comentario!');
-                    document.getElementById('comment-text').value = '';
-                    cargarComentarios(currentRouteId); // Actualización automática
+                    document.getElementById('comment-text').value = ''; // Limpiar textarea
+                    cargarComentarios(routeId); // Refresco automático
                 } else {
-                    alert("Error al guardar el comentario.");
+                    alert("No se pudo publicar el comentario.");
                 }
-            } catch (e) { console.error("Error posting comment:", e); }
+            } catch (e) {
+                console.error("Error posting comment:", e);
+                alert("Error de conexión al publicar.");
+            }
         };
 
         window.manualSubmitRating = async (rating) => {

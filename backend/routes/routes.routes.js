@@ -51,6 +51,9 @@ router.post('/valorar', async (req, res) => {
 // 3. Ruta para COMENTAR
 router.post('/comentar', async (req, res) => {
     const { route_id, user_id, comment } = req.body;
+    if (!route_id || !user_id || !comment) {
+        return res.status(400).json({ error: "Faltan datos (route_id, user_id o comment)" });
+    }
     try {
         const query = 'INSERT INTO route_comments (route_id, user_id, comment) VALUES (?, ?, ?)';
         await db.query(query, [route_id, user_id, comment]);
@@ -63,15 +66,17 @@ router.post('/comentar', async (req, res) => {
 
 // 4. OBTENER COMENTARIOS
 router.get('/:route_id/comentarios', async (req, res) => {
+    const { route_id } = req.params;
     try {
         const [results] = await db.query(
             `SELECT c.*, u.username FROM route_comments c 
              JOIN users u ON c.user_id = u.id 
              WHERE c.route_id = ? ORDER BY c.created_at DESC`,
-            [req.params.route_id]
+            [route_id]
         );
         res.json(results);
     } catch (error) {
+        console.error("Error en GET comentarios:", error.message);
         res.status(500).json({ error: "Error al obtener comentarios" });
     }
 });
