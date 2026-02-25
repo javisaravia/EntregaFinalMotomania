@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clubes - Motomanía</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+
+
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA CLUBES */
+        body {
+            padding: 0;
+            background-color: var(--bg-primary);
+        }
+
+        .main-content {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--accent-primary);
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .club-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .club-card h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-weight: 800;
+        }
+
+        .club-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-back-link {
+            text-decoration: none;
+            background: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .btn-back-link:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .badge-member {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            text-align: center;
+            font-weight: 700;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+    </style>
+    <script type="module" crossorigin src="./assets/clubs-CWMUwnVY.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/config-B_CD02Rf.js">
+    <link rel="stylesheet" crossorigin href="./assets/config-C_0tyGmS.css">
+</head>
+
+<body>
+
+    <header class="header-app">
+        <h1>🧥 Zona de Clubes</h1>
+        <a href="routes.html" class="btn-back-link">⬅ Volver al Mapa</a>
+    </header>
+
+    <div class="main-content">
+        <h2>✅ Mis Clubes</h2>
+        <div id="mis-clubes-container" class="grid">
+            <p style="color:var(--text-secondary)">Cargando...</p>
+        </div>
+
+        <h2>🌎 Explorar nuevos clubes</h2>
+        <div id="todos-clubes-container" class="grid">
+            <p style="color:var(--text-secondary)">Cargando...</p>
+        </div>
+    </div>
+
+
+</body>
+
+</html>

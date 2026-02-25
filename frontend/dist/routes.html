@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutas - Motomanía</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA RUTAS */
+        body {
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-primary);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 72px);
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            overflow-y: auto;
+            padding: 25px;
+            border-right: 1px solid var(--input-border);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+            background-color: #0b0f1a;
+            z-index: 1;
+        }
+
+        .header-app h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .btn-logout {
+            background: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-logout:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-clubs-link {
+            background: var(--bg-primary);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--input-border);
+            transition: all 0.3s;
+        }
+
+        .btn-clubs-link:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Tarjetas de Ruta */
+        .db-route-item {
+            background: var(--bg-primary);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--accent-primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-top: 1px solid var(--input-border);
+            border-right: 1px solid var(--input-border);
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .db-route-item:hover {
+            transform: scale(1.02);
+            background: #1e293b;
+        }
+
+        .db-route-item h4 {
+            margin: 0 0 5px 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .db-route-item .stats {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .db-route-item .rating {
+            color: #fbbf24;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        h3 {
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* PANEL DE DETALLES */
+        #route-details-panel {
+            position: fixed;
+            right: -400px;
+            top: 72px;
+            width: 380px;
+            height: calc(100vh - 72px);
+            background: var(--bg-secondary);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--input-border);
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #route-details-panel.active {
+            right: 0;
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-panel:hover {
+            color: var(--accent-primary);
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .detail-section h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Social Wall */
+        .comment-item {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            border: 1px solid var(--input-border);
+        }
+
+        .comment-item .user {
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .comment-form textarea {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: white;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            width: 100%;
+            font-family: var(--font-main);
+            margin-bottom: 10px;
+        }
+    </style>
+    <script type="module" crossorigin src="./assets/routes-54o9cdgx.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/config-B_CD02Rf.js">
+    <link rel="stylesheet" crossorigin href="./assets/config-C_0tyGmS.css">
+</head>
+
+<body>
+
+    <header class="header-app">
+        <h2>🏍️ MotoManía</h2>
+        <div class="header-buttons">
+            <a href="clubs.html" class="btn-clubs-link">🧥 Clubes</a>
+            <button class="btn-logout" onclick="logout()">Salir</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div>
+                <h3>Mis Rutas</h3>
+                <button class="btn-primary" style="padding: 10px; font-size: 0.9rem;" onclick="activarModoCreacion()">+
+                    Crear Nueva Ruta</button>
+                <div id="lista-rutas" style="margin-top: 15px;">
+                    <p style="text-align:center; color:#888;">Cargando...</p>
+                </div>
+            </div>
+            <div>
+                <h3>Rutas Recomendadas</h3>
+                <div id="predefinidas"></div>
+            </div>
+        </aside>
+
+        <div id="map"></div>
+
+        <!-- PANEL DE DETALLES -->
+        <div id="route-details-panel">
+            <span class="close-panel" onclick="cerrarDetalles()">&times;</span>
+            <h3 id="panel-title">Nombre de la Ruta</h3>
+            <p id="panel-desc" style="color: #aaa; margin-top: -10px; margin-bottom: 20px;"></p>
+
+            <div class="detail-section">
+                <h5>📊 Estadísticas</h5>
+                <p id="panel-stats" style="font-size: 0.9rem;"></p>
+            </div>
+
+
+            <div class="detail-section">
+                <h5>⭐ Valorar Ruta</h5>
+                <div class="star-rating" id="star-rating-ui">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                <p id="avg-rating-text" style="font-size: 0.8rem; color: #aaa; margin-top: 5px;"></p>
+            </div>
+
+            <div class="detail-section" style="border-bottom: none;">
+                <h5>💬 Muro Social</h5>
+                <div class="comments-list" id="comments-container"></div>
+
+                <div class="comment-form">
+                    <textarea id="comment-text" placeholder="Escribe un comentario..." rows="2"></textarea>
+                    <input type="file" id="comment-file" accept="image/*">
+                    <button class="btn-primary" style="padding: 10px;" onclick="subirComentario()">Publicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+</html>
