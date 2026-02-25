@@ -8,92 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="js/utils.js"></script>
-    <style>
-        /* ESTILOS ESPECÍFICOS PARA CLUBES */
-        body {
-            padding: 0;
-            background-color: var(--bg-primary);
-        }
-
-        .main-content {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        h2 {
-            border-bottom: 2px solid var(--accent-primary);
-            display: inline-block;
-            padding-bottom: 8px;
-            margin-top: 40px;
-            margin-bottom: 25px;
-            color: var(--text-primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .club-card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-        }
-
-        .club-card h3 {
-            margin-bottom: 15px;
-            color: var(--text-primary);
-            font-weight: 800;
-        }
-
-        .club-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-        }
-
-        .btn-back-link {
-            text-decoration: none;
-            background: #334155;
-            color: white;
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-        }
-
-        .btn-back-link:hover {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-
-        .badge-member {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            padding: 10px;
-            border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            text-align: center;
-            font-weight: 700;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-    </style>
 </head>
 
 <body>
 
     <header class="header-app">
         <h1>🧥 Zona de Clubes</h1>
-        <a href="routes.html" class="btn-back-link">⬅ Volver al Mapa</a>
+        <div class="header-buttons">
+            <a href="routes.html" class="btn-secondary" style="width:auto; padding:8px 16px;">⬅ Volver al Mapa</a>
+        </div>
     </header>
 
     <div class="main-content">
@@ -159,7 +82,7 @@
                                 <h3>${club.name}</h3>
                                 <p>${club.description}</p>
                             </div>
-                            <div class="badge-member">✓ Eres Miembro</div>
+                            <div class="badge-member" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 10px; border-radius: var(--radius-md); text-align: center; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">✓ Eres Miembro</div>
                         </div>
                     `;
                 });
