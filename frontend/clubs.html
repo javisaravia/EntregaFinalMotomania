@@ -114,7 +114,7 @@
                                 <h3>${club.name}</h3>
                                 <p>${club.description}</p>
                             </div>
-                            <button class="btn-primary" onclick="unirse(${club.id}, '${club.name}')">
+                            <button class="btn-primary" onclick="unirse(${club.id}, '${club.name}', this)">
                                 Unirse al Club
                             </button>
                         </div>
@@ -131,10 +131,11 @@
         }
 
         // C. FUNCIÓN UNIRSE
-        async function unirse(clubId, clubName) {
-            if (!confirm(`¿Quieres unirte a "${clubName}"?`)) return;
+        async function unirse(clubId, clubName, btnElement) {
+            if (!confirm(`¿Quieres unirte al club "${clubName}"?`)) return;
 
-            toggleSpinner(true);
+            if (btnElement) btnElement.classList.add('btn-loading');
+
             try {
                 const res = await fetch(`${API_BASE_URL}/api/clubs/join`, {
                     method: 'POST',
@@ -145,16 +146,16 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert('¡Bienvenido al club! Ya eres un miembro oficial.');
+                    mostrarToast('¡Bienvenido al club! Ya eres miembro.');
                     misClubesIds = [];
-                    iniciarPagina(); // Recargar listas
+                    iniciarPagina();
                 } else {
-                    alert(data.error || "No se pudo unir al club");
+                    mostrarToast(data.error || "No se pudo unir al club", "error");
                 }
             } catch (error) {
-                mostrarToast("Error de conexión", "error");
+                mostrarToast("Error de conexión con el servidor", "error");
             } finally {
-                toggleSpinner(false);
+                if (btnElement) btnElement.classList.remove('btn-loading');
             }
         }
 

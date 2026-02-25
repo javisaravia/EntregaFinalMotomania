@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="styles.css">
+    <script src="js/utils.js"></script>
 </head>
 
 <body>
@@ -140,10 +141,15 @@
                             distance: (r.distance / 1000).toFixed(2), duration: Math.round(r.duration / 60)
                         })
                     });
-                    if (res.ok) { alert("¡Ruta guardada!"); cargarMisRutas(); }
-                    else { const err = await res.json(); alert("Error: " + (err.detalles || err.error)); }
+                    if (res.ok) {
+                        mostrarToast("¡Ruta guardada con éxito!");
+                        cargarMisRutas();
+                    } else {
+                        const err = await res.json();
+                        mostrarToast("Error: " + (err.detalles || err.error), "error");
+                    }
                 }
-            } catch (e) { alert("Error al guardar."); } finally {
+            } catch (e) { mostrarToast("Error al guardar la ruta.", "error"); } finally {
                 modoCreacion = false; document.getElementById('spinner').style.display = 'none';
                 if (marcadorInicio) map.removeLayer(marcadorInicio);
                 document.getElementById('map').style.cursor = '';
@@ -232,9 +238,12 @@
         }
 
         window.manualSubmitRating = async (rating) => {
+            if (!localStorage.getItem('user')) {
+                return mostrarToast("Debes iniciar sesión para valorar.", "error");
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const routeId = currentRouteId || urlParams.get('route_id');
-            if (!routeId) return alert("Selecciona una ruta antes de valorar.");
+            if (!routeId) return mostrarToast("Selecciona una ruta antes de valorar.", "error");
 
             actualizarEstrellasUI(rating);
             const status = document.getElementById('rating-status-container');
@@ -250,6 +259,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     status.innerHTML = '<div class="rating-saved-msg">¡Valoración guardada!</div>';
+                    mostrarToast("Valoración enviada.");
                     if (data.newMedia !== undefined) {
                         const media = parseFloat(data.newMedia);
                         document.getElementById('avg-rating-text').innerText = `Valoración media: ${media.toFixed(1)} ★`;
@@ -257,21 +267,28 @@
                     cargarMisRutas();
                 } else {
                     status.innerHTML = '';
-                    alert("Error al guardar valoración.");
+                    mostrarToast("No se pudo guardar la valoración.", "error");
                 }
             } catch (e) {
                 status.innerHTML = '';
+                mostrarToast("Error de conexión con el servidor.", "error");
             }
         };
 
         window.manualSubmitComment = async () => {
+            if (!localStorage.getItem('user')) {
+                return mostrarToast("Debes iniciar sesión para comentar.", "error");
+            }
             const t = document.getElementById('comment-text');
+            const btn = document.getElementById('btn-publicar-comentario');
             const commentVal = t.value.trim();
             const urlParams = new URLSearchParams(window.location.search);
             const routeId = currentRouteId || urlParams.get('route_id');
 
-            if (!commentVal) return alert("Escribe algo antes de publicar.");
-            if (!routeId) return alert("Error: No se ha detectado la ruta seleccionada.");
+            if (commentVal.length < 5) return mostrarToast("El comentario debe tener al menos 5 caracteres.", "error");
+            if (!routeId) return mostrarToast("Error: No se ha detectado la ruta.", "error");
+
+            if (btn) btn.classList.add('btn-loading');
 
             try {
                 const res = await fetch(`${BASE_URL}/api/routes/comentar`, {
@@ -282,12 +299,15 @@
 
                 if (res.ok) {
                     t.value = '';
+                    mostrarToast("Comentario publicado.");
                     cargarComentarios(routeId);
                 } else {
-                    alert("No se pudo publicar el comentario.");
+                    mostrarToast("No se pudo publicar el comentario.", "error");
                 }
             } catch (e) {
-                alert("Error de conexión al publicar.");
+                mostrarToast("Error de conexión al publicar.", "error");
+            } finally {
+                if (btn) btn.classList.remove('btn-loading');
             }
         };
 
