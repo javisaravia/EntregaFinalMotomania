@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const db = require('./db'); // Asegúrate de que db.js existe
+const jwt = require('jsonwebtoken');
+const db = require('./db');
 
 const app = express();
 const PORT = 3000;
@@ -39,7 +40,8 @@ app.post('/api/auth/login', async (req, res) => {
         const usuario = users[0];
         if (usuario.password == password) {
             console.log("✅ Login OK:", usuario.username);
-            res.json({ message: "Login OK", user: { id: usuario.id, nombre: usuario.username } });
+            const token = jwt.sign({ id: usuario.id, username: usuario.username }, 'SECRET', { expiresIn: '24h' });
+            res.json({ message: "Login OK", token, user: { id: usuario.id, nombre: usuario.username } });
         } else {
             res.status(401).json({ error: "Contraseña mala" });
         }

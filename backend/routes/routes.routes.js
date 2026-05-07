@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const auth = require('../middleware/auth.middleware');
 const multer = require('multer');
 const path = require('path');
 
@@ -18,17 +19,57 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // 1. Ruta para GUARDAR
-router.post('/guardar', async (req, res) => {
-    const { title, description, coordinates, user_id, distance, duration } = req.body;
+router.post('/', auth, async (req, res) => {
+    console.log("📢 Datos recibidos en POST /api/routes:", req.body);
+    
+    // Capturamos el userId del token (req.user.id) o del body (user_id)
+    const userId = req.user ? req.user.id : req.body.user_id;
+
+    // Campos del body
+    const { title, description, coordinates, start_point, end_point, distance, duration } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: "Falta el ID de usuario (token o body)" });
+    }
+
     try {
-        const coordsJSON = typeof coordinates === 'string' ? coordinates : JSON.stringify(coordinates);
-        const sql = 'INSERT INTO routes (title, description, coordinates, user_id, distance, duration) VALUES (?, ?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [title, description || '', coordsJSON, user_id, distance || 0, duration || 0]);
+        const coordsJSON = typeof coordinates === 'string' ? coordinates : JSON.stringify(coordinates || []);
+        
+        // El SQL definitivo según lo solicitado: title, description, start_point, end_point, user_id
+        // También incluimos coordinates, distance, duration por si existen en la tabla
+        const sql = `
+            INSERT INTO routes 
+            (title, description, start_point, end_point, user_id, coordinates, distance, duration) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        const [result] = await db.query(sql, [
+            title, 
+            description || '', 
+            start_point || '', 
+            end_point || '', 
+            userId, 
+            coordsJSON, 
+            distance || 0, 
+            duration || 0
+        ]);
+
+        console.log("✅ Ruta guardada con ID:", result.insertId);
         res.json({ msg: "Ruta guardada", id: result.insertId });
     } catch (error) {
-        console.error("Error en /guardar:", error.message);
-        res.status(500).json({ error: "Error de base de datos: " + error.message });
+        console.error("❌ Error en DB al guardar ruta:", error);
+        res.status(500).json({ 
+            error: "Error de base de datos", 
+            detalles: error.message,
+            sqlMessage: error.sqlMessage 
+        });
     }
+});
+
+// Alias por si el frontend todavía usa /guardar
+router.post('/guardar', auth, async (req, res) => {
+    // Redirigimos a la ruta raíz ( / )
+    res.redirect(307, './');
 });
 
 // 2. Ruta para VALORAR (Estrellas)
