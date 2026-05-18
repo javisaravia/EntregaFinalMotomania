@@ -234,7 +234,7 @@
                 if (text) text.innerText = media > 0 ? `Valoración media: ${media.toFixed(1)} ★` : 'Sin valoraciones aún';
                 actualizarEstrellasUI(Math.round(media));
             } catch (e) {
-                if (text) text.innerText = 'Error al cargar valoración';
+                if (text) text.innerText = 'No se ha valorado aún';
             } finally {
                 if (text) text.style.opacity = '1';
             }
@@ -369,7 +369,7 @@
             window.toggleSidebar(true);
         };
         window.verFavoritas = () => {
-            mostrarToast("¡Próximamente! Podrás ver tus rutas favoritas aquí.", "info");
+            mostrarToast("Próximamente podrás ver tus rutas favoritas aquí.", "info");
             document.getElementById('dropdown-rutas').classList.remove('active');
         };
 
